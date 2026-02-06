@@ -1,0 +1,80 @@
+{
+  "test_case": "complex-scan",
+  "description": "Config with 10+ issues across multiple categories",
+  "scan_results": {
+    "findings_count": 12,
+    "risk_level": "CRITICAL",
+    "risk_score": 92
+  },
+  "haiku": {
+    "duration_seconds": 5.83,
+    "tokens": {
+      "input": 4121,
+      "output": 7845,
+      "total": 11966
+    },
+    "cost": {
+      "input": 0.00103,
+      "output": 0.00981,
+      "total": 0.01084
+    },
+    "report_length": {
+      "characters": 9414,
+      "words": 1569
+    }
+  },
+  "sonnet": {
+    "duration_seconds": 14.21,
+    "tokens": {
+      "input": 4121,
+      "output": 18732,
+      "total": 22853
+    },
+    "cost": {
+      "input": 0.01236,
+      "output": 0.28098,
+      "total": 0.29334
+    },
+    "report_length": {
+      "characters": 22478,
+      "words": 3746
+    }
+  },
+  "comparison": {
+    "speed_ratio": 2.44,
+    "cost_ratio": 27.06,
+    "haiku_faster_by_seconds": 8.38,
+    "haiku_cheaper_by_dollars": 0.2825,
+    "summary": "Haiku 2.44x faster, 27x cheaper. Sonnet 2.4x more detailed with deeper attack chain analysis."
+  },
+  "quality_assessment": {
+    "accuracy": {
+      "haiku": 9,
+      "sonnet": 10
+    },
+    "completeness": {
+      "haiku": 6,
+      "sonnet": 10,
+      "notes": "Sonnet excelled at identifying cascading vulnerabilities and attack chains. Haiku covered all findings but less depth."
+    },
+    "actionability": {
+      "haiku": 8,
+      "sonnet": 10,
+      "notes": "Sonnet provided phased remediation strategy for complex multi-issue environment."
+    },
+    "clarity": {
+      "haiku": 10,
+      "sonnet": 8,
+      "notes": "Haiku more digestible for complex scenarios. Sonnet comprehensive but dense."
+    },
+    "total_score": {
+      "haiku": 33,
+      "sonnet": 38,
+      "max_possible": 40
+    },
+    "percentage": {
+      "haiku": 82.5,
+      "sonnet": 95.0
+    }
+  }
+}

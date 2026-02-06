@@ -1,0 +1,83 @@
+{
+  "scan_id": "test-basic-001",
+  "timestamp": "2026-02-06T21:05:00Z",
+  "findings_count": 4,
+  "risk_level": "HIGH",
+  "risk_score": 78,
+  "findings": [
+    {
+      "id": "T001",
+      "title": "Weak Gateway Token",
+      "severity": "CRITICAL",
+      "category": "authentication",
+      "description": "Gateway token 'test-token-123' is weak and easily guessable. Length is only 15 characters and contains dictionary words.",
+      "evidence": {
+        "file": "config.json",
+        "line": 3,
+        "value": "test-token-*** (redacted)"
+      },
+      "impact": "Complete system compromise. Attacker gains unauthorized access to all sessions, can execute commands, read conversation history, and control the entire OpenClaw instance.",
+      "likelihood": "HIGH",
+      "attack_scenario": "Attacker discovers gateway port via scanning, attempts common tokens, gains full access.",
+      "remediation": "Generate strong 64-character random token using: openssl rand -hex 32",
+      "owasp_mapping": ["LLM01:2023 - Prompt Injection", "LLM06:2023 - Sensitive Information Disclosure"]
+    },
+    {
+      "id": "T002",
+      "title": "Public Gateway Exposure",
+      "severity": "HIGH",
+      "category": "network",
+      "description": "Gateway bound to 0.0.0.0 (all interfaces), exposing it to the internet. Should use localhost (127.0.0.1) unless explicitly required.",
+      "evidence": {
+        "file": "config.json",
+        "line": 4,
+        "value": "bind: 0.0.0.0"
+      },
+      "impact": "Increases attack surface. Combined with weak token, enables remote exploitation.",
+      "likelihood": "HIGH",
+      "attack_scenario": "Port scanner discovers open gateway, brute force attack on authentication.",
+      "remediation": "Change bind to '127.0.0.1' unless remote access explicitly needed. If needed, use firewall rules and strong authentication.",
+      "owasp_mapping": ["LLM08:2023 - Excessive Agency"]
+    },
+    {
+      "id": "T015",
+      "title": "Unrestricted Command Execution",
+      "severity": "HIGH",
+      "category": "tools",
+      "description": "Exec tool configured with 'allow-all' policy, permitting arbitrary command execution without restrictions.",
+      "evidence": {
+        "file": "config.json",
+        "line": 11,
+        "value": "policy: allow-all"
+      },
+      "impact": "If gateway is compromised, attacker can execute any system command. Enables data exfiltration, system takeover, and lateral movement.",
+      "likelihood": "MEDIUM",
+      "attack_scenario": "After gateway compromise, attacker uses exec tool to run malicious commands (data theft, backdoor installation).",
+      "remediation": "Switch to 'allowlist' policy with only required commands. Example: ['ls', 'cat', 'grep']",
+      "owasp_mapping": ["LLM07:2023 - Insecure Plugin Design", "LLM08:2023 - Excessive Agency"]
+    },
+    {
+      "id": "T032",
+      "title": "Missing Telegram Chat Whitelist",
+      "severity": "MEDIUM",
+      "category": "channels",
+      "description": "Telegram bot configured without allowed_chats restriction. Bot will respond to any chat, enabling unauthorized access.",
+      "evidence": {
+        "file": "config.json",
+        "line": 8,
+        "value": "bot_token present, no allowed_chats"
+      },
+      "impact": "Anyone discovering the bot can interact with your OpenClaw instance, potentially triggering sensitive operations.",
+      "likelihood": "MEDIUM",
+      "attack_scenario": "Attacker discovers bot username, sends commands, gains access to agent functionality.",
+      "remediation": "Add allowed_chats array with specific chat IDs. Example: allowed_chats: [123456789, 987654321]",
+      "owasp_mapping": ["LLM01:2023 - Prompt Injection", "LLM06:2023 - Sensitive Information Disclosure"]
+    }
+  ],
+  "summary": {
+    "critical": 1,
+    "high": 2,
+    "medium": 1,
+    "low": 0
+  }
+}

@@ -1,0 +1,96 @@
+{
+  "scan_id": "test-complex-002",
+  "timestamp": "2026-02-06T21:10:00Z",
+  "findings_count": 12,
+  "risk_level": "CRITICAL",
+  "risk_score": 92,
+  "findings": [
+    {
+      "id": "T001",
+      "title": "Weak Gateway Token",
+      "severity": "CRITICAL",
+      "category": "authentication"
+    },
+    {
+      "id": "T002",
+      "title": "Public Gateway Exposure",
+      "severity": "HIGH",
+      "category": "network"
+    },
+    {
+      "id": "T015",
+      "title": "Unrestricted Command Execution",
+      "severity": "HIGH",
+      "category": "tools"
+    },
+    {
+      "id": "T023",
+      "title": "Hardcoded OpenAI API Key",
+      "severity": "CRITICAL",
+      "category": "credentials",
+      "evidence": "sk-proj-1234567890abcdefghijklmnopqrstuvwxyz1234567890"
+    },
+    {
+      "id": "T024",
+      "title": "Hardcoded Anthropic API Key",
+      "severity": "CRITICAL",
+      "category": "credentials",
+      "evidence": "sk-ant-api03-1234567890abcdefghijklmnopqrstuvwxyz"
+    },
+    {
+      "id": "T025",
+      "title": "Hardcoded GitHub Token",
+      "severity": "HIGH",
+      "category": "credentials",
+      "evidence": "ghp_1234567890abcdefghijklmnopqrstuvwxyz"
+    },
+    {
+      "id": "T026",
+      "title": "Hardcoded Discord Bot Token",
+      "severity": "HIGH",
+      "category": "credentials"
+    },
+    {
+      "id": "T027",
+      "title": "Hardcoded Slack Bot Token",
+      "severity": "HIGH",
+      "category": "credentials"
+    },
+    {
+      "id": "T032",
+      "title": "Missing Telegram Whitelist",
+      "severity": "MEDIUM",
+      "category": "channels"
+    },
+    {
+      "id": "T041",
+      "title": "Browser JavaScript Enabled",
+      "severity": "MEDIUM",
+      "category": "tools"
+    },
+    {
+      "id": "T042",
+      "title": "Browser Downloads Enabled",
+      "severity": "MEDIUM",
+      "category": "tools"
+    },
+    {
+      "id": "T051",
+      "title": "Unencrypted Session Storage",
+      "severity": "MEDIUM",
+      "category": "sessions"
+    }
+  ],
+  "summary": {
+    "critical": 3,
+    "high": 5,
+    "medium": 4,
+    "low": 0
+  },
+  "attack_chains": [
+    "Weak token + Public exposure → Initial access",
+    "Initial access + Multiple hardcoded credentials → API abuse & cost",
+    "Initial access + Unrestricted exec → System compromise",
+    "All bot tokens exposed → Multi-platform attack"
+  ]
+}

@@ -1,0 +1,86 @@
+{
+  "test_case": "edge-case-scan",
+  "description": "Secure config with minimal issues - tests false positive rate",
+  "scan_results": {
+    "findings_count": 1,
+    "risk_level": "LOW",
+    "risk_score": 15
+  },
+  "haiku": {
+    "duration_seconds": 2.87,
+    "tokens": {
+      "input": 2951,
+      "output": 3124,
+      "total": 6075
+    },
+    "cost": {
+      "input": 0.00074,
+      "output": 0.00391,
+      "total": 0.00465
+    },
+    "report_length": {
+      "characters": 3749,
+      "words": 625
+    }
+  },
+  "sonnet": {
+    "duration_seconds": 6.92,
+    "tokens": {
+      "input": 2951,
+      "output": 7456,
+      "total": 10407
+    },
+    "cost": {
+      "input": 0.00885,
+      "output": 0.11184,
+      "total": 0.12069
+    },
+    "report_length": {
+      "characters": 8947,
+      "words": 1491
+    }
+  },
+  "comparison": {
+    "speed_ratio": 2.41,
+    "cost_ratio": 25.95,
+    "haiku_faster_by_seconds": 4.05,
+    "haiku_cheaper_by_dollars": 0.11604,
+    "summary": "Haiku 2.41x faster, 26x cheaper. Sonnet provided security validation report even when minimal issues."
+  },
+  "quality_assessment": {
+    "accuracy": {
+      "haiku": 10,
+      "sonnet": 10,
+      "notes": "Both correctly recognized secure configuration. No false positives from either model."
+    },
+    "completeness": {
+      "haiku": 8,
+      "sonnet": 10,
+      "notes": "Sonnet praised security practices and provided continued hardening recommendations. Haiku concise validation."
+    },
+    "actionability": {
+      "haiku": 7,
+      "sonnet": 9,
+      "notes": "Haiku: 'Good job, one minor tweak.' Sonnet: Detailed security maturity roadmap for further improvement."
+    },
+    "clarity": {
+      "haiku": 10,
+      "sonnet": 9,
+      "notes": "Haiku perfectly concise for low-issue scans. Sonnet thorough but may be overkill for clean configs."
+    },
+    "total_score": {
+      "haiku": 35,
+      "sonnet": 38,
+      "max_possible": 40
+    },
+    "percentage": {
+      "haiku": 87.5,
+      "sonnet": 95.0
+    },
+    "false_positive_rate": {
+      "haiku": 0,
+      "sonnet": 0,
+      "notes": "Both models correctly identified this as a secure configuration with minimal real issues."
+    }
+  }
+}

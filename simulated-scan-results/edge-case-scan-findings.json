@@ -1,0 +1,38 @@
+{
+  "scan_id": "test-edge-003",
+  "timestamp": "2026-02-06T21:15:00Z",
+  "findings_count": 1,
+  "risk_level": "LOW",
+  "risk_score": 15,
+  "findings": [
+    {
+      "id": "T071",
+      "title": "Exec Allowlist Could Be More Restrictive",
+      "severity": "LOW",
+      "category": "best-practices",
+      "description": "Exec tool uses allowlist policy (good!) but includes 'find' command which has potential for misuse with complex arguments.",
+      "impact": "Minimal. Configuration already follows security best practices. Minor optimization opportunity.",
+      "likelihood": "LOW",
+      "remediation": "Consider removing 'find' from allowlist if not actively used. Alternative: restrict find to specific paths only."
+    }
+  ],
+  "summary": {
+    "critical": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 1
+  },
+  "security_highlights": [
+    "✅ Strong gateway token (64 characters, high entropy)",
+    "✅ Localhost binding (127.0.0.1) - network isolated",
+    "✅ Rate limiting enabled",
+    "✅ Telegram whitelist configured",
+    "✅ Exec allowlist policy (not allow-all)",
+    "✅ Browser security: JavaScript disabled, downloads disabled",
+    "✅ Session encryption enabled",
+    "✅ Prompt guard enabled with high threshold",
+    "✅ Secret sanitization enabled in logs",
+    "✅ All secrets use environment variables"
+  ],
+  "verdict": "EXCELLENT security posture. Configuration follows best practices. Minor optimization possible but not critical."
+}

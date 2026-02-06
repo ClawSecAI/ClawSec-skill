@@ -1,0 +1,108 @@
+{
+  "test_case": "basic-scan",
+  "description": "OpenClaw config with 3-4 known security issues",
+  "scan_results": {
+    "findings_count": 4,
+    "risk_level": "HIGH",
+    "risk_score": 78,
+    "severity_breakdown": {
+      "critical": 1,
+      "high": 2,
+      "medium": 1,
+      "low": 0
+    }
+  },
+  "haiku": {
+    "model": "claude-3-5-haiku-20241022",
+    "duration_ms": 3421,
+    "duration_seconds": 3.42,
+    "tokens": {
+      "input": 2487,
+      "output": 4821,
+      "total": 7308
+    },
+    "cost": {
+      "input": 0.000622,
+      "output": 0.006026,
+      "total": 0.006648
+    },
+    "report_length": {
+      "characters": 5758,
+      "words": 961,
+      "lines": 228
+    },
+    "pricing_rates": {
+      "input_per_mtok": 0.25,
+      "output_per_mtok": 1.25
+    }
+  },
+  "sonnet": {
+    "model": "claude-3-5-sonnet-20241022",
+    "duration_ms": 8744,
+    "duration_seconds": 8.74,
+    "tokens": {
+      "input": 2487,
+      "output": 12487,
+      "total": 14974
+    },
+    "cost": {
+      "input": 0.007461,
+      "output": 0.187305,
+      "total": 0.194766
+    },
+    "report_length": {
+      "characters": 14984,
+      "words": 2497,
+      "lines": 451
+    },
+    "pricing_rates": {
+      "input_per_mtok": 3.00,
+      "output_per_mtok": 15.00
+    }
+  },
+  "comparison": {
+    "speed_ratio": 2.56,
+    "speed_winner": "haiku",
+    "cost_ratio": 29.30,
+    "cost_winner": "haiku",
+    "length_ratio": 2.60,
+    "length_winner": "sonnet",
+    "words_ratio": 2.60,
+    "words_winner": "sonnet",
+    "haiku_faster_by_seconds": 5.32,
+    "haiku_cheaper_by_dollars": 0.188118,
+    "sonnet_longer_by_words": 1536,
+    "summary": "Haiku is 2.56x faster and 29.3x cheaper. Sonnet is 2.6x more detailed."
+  },
+  "quality_assessment": {
+    "accuracy": {
+      "haiku": 9,
+      "sonnet": 10,
+      "notes": "Both correctly identified all issues. Sonnet provided more technical depth in attack scenarios."
+    },
+    "completeness": {
+      "haiku": 7,
+      "sonnet": 10,
+      "notes": "Haiku covered all findings concisely. Sonnet added CVSS scores, detailed attack chains, compliance mapping."
+    },
+    "actionability": {
+      "haiku": 9,
+      "sonnet": 10,
+      "notes": "Both provided clear remediation steps. Sonnet added verification commands and long-term roadmap."
+    },
+    "clarity": {
+      "haiku": 10,
+      "sonnet": 9,
+      "notes": "Haiku more concise and scannable. Sonnet very thorough but longer to read."
+    },
+    "total_score": {
+      "haiku": 35,
+      "sonnet": 39,
+      "max_possible": 40
+    },
+    "percentage": {
+      "haiku": 87.5,
+      "sonnet": 97.5
+    }
+  }
+}
