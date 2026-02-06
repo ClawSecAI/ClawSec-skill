@@ -1,76 +1,82 @@
-# Executive Summary Generation
+# Executive Summary Generation (Technical Version)
 
 **Module:** `server/lib/executive-summary.js`  
-**Version:** 1.0.0  
+**Version:** 2.0.0 (Technical Revision)  
 **Author:** Ubik (@ClawSecAI)  
-**Created:** 2026-02-06
+**Created:** 2026-02-06  
+**Revised:** 2026-02-06 (Per Stan's feedback: technical version for technical audiences)
 
 ## Overview
 
-The Executive Summary Generator transforms detailed technical security findings into concise, business-friendly summaries suitable for executive audiences. It addresses a critical gap in security reporting: making technical risks understandable and actionable for non-technical decision makers.
+The Executive Summary Generator transforms detailed security findings into concise, technically precise summaries suitable for technical audiences. It provides accurate threat intelligence with specific identifiers, attack vectors, and remediation paths.
 
 ## Purpose
 
-Security teams need to communicate risks to executives who:
-- Don't understand technical jargon
-- Need quick insights (3-5 minutes max)
-- Want to know business impact, not technical details
-- Need clear action items and timeframes
+Security engineers and technical teams need:
+- Precise threat identification (threat IDs, CVSS scores)
+- Technical attack vector descriptions
+- Specific remediation instructions
+- Evidence-based findings with technical details
 
-This module bridges that gap by:
-1. Translating technical threats into business language
-2. Highlighting business impact over technical details
-3. Providing clear, actionable recommendations
-4. Limiting output to 3-5 digestible bullet points
+This module provides:
+1. Technical threat terminology and identifiers (T001-T999)
+2. Attack vector descriptions and exploit details
+3. Specific remediation paths with implementation guidance
+4. Evidence data and technical proof points
+5. CVSS scoring and OWASP category mapping
 
 ## Key Features
 
-### 1. Business-Friendly Language
+### 1. Technical Threat Intelligence
 
-**Technical → Business Translation:**
+**Threat ID System:**
 
-| Technical Term | Business Translation |
-|----------------|---------------------|
-| Weak Gateway Token | Weak system access password |
-| Exposed Secrets in Configuration | Credentials stored insecurely |
-| Public Gateway Exposure | System exposed to internet |
-| Unrestricted Tool Execution | Uncontrolled system commands |
-| Unencrypted Session Storage | Unprotected conversation history |
+| Threat ID | Vulnerability | Attack Vector | CVSS Range |
+|-----------|--------------|---------------|------------|
+| T001 | Weak Gateway Token | Token brute-force, entropy analysis | 9.0-10.0 |
+| T002 | Public Gateway Exposure | Network scanning, direct internet access | 7.0-8.9 |
+| T003 | Unrestricted Tool Execution | Command injection via exec tool | 9.0-10.0 |
+| T005 | Exposed Secrets | Configuration file parsing, repo mining | 9.0-10.0 |
+| T006 | No Rate Limiting | API abuse, brute-force attacks | 4.0-6.9 |
 
-### 2. Business Impact Mapping
+### 2. Technical Impact Mapping
 
-Each threat is mapped to:
-- **Impact**: What the vulnerability means in business terms
-- **Consequence**: What could happen if exploited
-- **Priority**: When it needs to be fixed
+Each threat includes:
+- **Attack Vector**: How the vulnerability can be exploited
+- **Technical Impact**: Precise security consequences (RCE, credential theft, etc.)
+- **Remediation**: Specific implementation instructions
+- **OWASP Category**: OWASP Top 10 classification
 
 Example:
 ```javascript
 {
-  impact: 'login credentials and API keys exposed',
-  consequence: 'unauthorized cloud spending or data access',
-  priority: 'immediate'
+  attack_vector: 'Token brute-force or entropy analysis',
+  technical_impact: 'Complete Gateway API compromise, full system access',
+  remediation: 'Generate cryptographically secure token (≥32 bytes, 256-bit entropy)',
+  owasp_category: 'A07:2021 – Identification and Authentication Failures'
 }
 ```
 
-### 3. Risk Level Communication
+### 3. Risk Level Classification
 
-**Technical Risk Levels → Business Language:**
+**Technical Risk Levels (CVSS-based):**
 
-| Technical | Business Label | Description | Timeframe |
-|-----------|---------------|-------------|-----------|
-| CRITICAL | Critical Business Risk | requires immediate action to prevent security incident | within 24 hours |
-| HIGH | Significant Risk | should be addressed urgently to protect operations | within 1 week |
-| MEDIUM | Moderate Risk | should be planned for remediation soon | within 1 month |
-| LOW | Minor Risk | can be addressed during regular maintenance | within 3 months |
-| SECURE | Secure | no significant risks detected | no action required |
+| Level | CVSS Range | Description | SLA | Priority |
+|-------|------------|-------------|-----|----------|
+| CRITICAL | 9.0-10.0 | Immediate exploitation possible, complete system compromise likely | < 24 hours | P0 |
+| HIGH | 7.0-8.9 | Exploitable vulnerability, significant security impact | < 7 days | P1 |
+| MEDIUM | 4.0-6.9 | Security weakness present, limited exploitability | < 30 days | P2 |
+| LOW | 0.1-3.9 | Minor security issue, low attack probability | < 90 days | P3 |
+| SECURE | 0.0 | No exploitable vulnerabilities detected | N/A | N/A |
 
-### 4. Structured Output
+### 4. Structured Technical Output
 
 Every executive summary includes:
-1. **Summary Statement**: One-sentence overview with risk level and score
-2. **Key Points**: 3-5 bullet points with findings and impacts
-3. **Recommendations**: Clear action items with timeframes
+1. **Technical Summary**: Precise severity breakdown (X CRITICAL, Y HIGH, etc.)
+2. **Risk Score**: 0-100 score with CVSS range
+3. **Security Findings**: 3-5 bullet points with threat IDs, attack vectors, evidence
+4. **Remediation Steps**: Specific technical implementation guidance
+5. **Severity Distribution Table**: Markdown table with finding counts
 
 ## API Reference
 
@@ -214,51 +220,65 @@ function generateReport(scanId, config, findings, threatsIndex, scoreResult) {
 }
 ```
 
-### Output Example
+### Output Example (Technical Version)
 
 ```markdown
-## Executive Summary
+## Executive Summary (Technical)
 
-Security review identified 2 areas requiring attention, including 2 issues requiring immediate action. Overall risk level: **Critical Business Risk** (95/100) - requires immediate action to prevent security incident.
+Security audit identified 2 findings: 2 CRITICAL. Risk Score: **95/100** (CRITICAL, CVSS 9.0-10.0). Remediation SLA: < 24 hours (P0 priority). Immediate action required to prevent exploitation.
 
-### Key Points
+### Security Findings
 
-🚨 **Weak system access password** - Weak system access password, which could lead to unauthorized access to company systems.
+🔴 **[T001] Weak or Default Gateway Token** (CRITICAL) — Token brute-force or entropy analysis. Impact: Complete Gateway API compromise, full system access (Evidence: token_length=16, entropy_bits=64)
 
-🚨 **Credentials stored insecurely** - Login credentials and API keys exposed, which could lead to unauthorized cloud spending or data access.
+🔴 **[T005] Exposed Secrets in Configuration** (CRITICAL) — Configuration file parsing, repository mining, .env exposure. Impact: API key compromise, credential theft, cloud resource hijacking (Evidence: exposed_secrets=5, file="openclaw.json")
 
-🎯 **Recommended Action**: Address 2 critical issues within 24 hours to prevent potential security incidents.
+🔧 **Remediation Priority P0**: Generate cryptographically secure token (≥32 bytes, 256-bit entropy)
 
-**Risk Score**: **95/100** | **Overall Risk**: 🔴 **CRITICAL** (high confidence)
+⚠️ **Urgent**: Patch 2 critical vulnerabilities within < 24 hours. Isolate affected systems if exploitation suspected.
+
+### Severity Distribution
+
+| Severity | Count |
+|----------|-------|
+| 🔴 CRITICAL | 2 |
+| 🟠 HIGH | 0 |
+| 🟡 MEDIUM | 0 |
+| 🔵 LOW | 0 |
+| **Total** | **2** |
 ```
 
 ## Design Principles
 
-### 1. Executive Audience First
+### 1. Technical Precision First
 
-- **No technical jargon** - Use business language ("password" not "token")
-- **No threat IDs** - Executives don't care about "T005"
-- **No technical evidence** - Skip "bind_address: 0.0.0.0"
+- **Use technical terminology** - Accurate threat names (not simplified)
+- **Include threat IDs** - Enable cross-referencing (T001, T005, etc.)
+- **Show technical evidence** - Display config values (bind_address: 0.0.0.0, token_length: 16)
+- **Reference standards** - CVSS scores, OWASP categories, SLAs
 
-### 2. Business Impact Focus
+### 2. Technical Impact Focus
 
 Every finding must answer:
-- **What could happen?** (business consequence)
-- **How bad?** (severity in business terms)
-- **When to fix?** (timeframe for action)
+- **Attack vector?** - How can this be exploited?
+- **Technical impact?** - RCE, credential theft, privilege escalation?
+- **Evidence?** - What specific values/configurations are vulnerable?
+- **OWASP category?** - How does this map to OWASP Top 10?
 
-### 3. Conciseness
+### 3. Precise Detail
 
-- **3-5 bullets maximum** - Executives have limited time
-- **One-sentence explanations** - Get to the point
-- **Clear recommendations** - Tell them what to do
+- **3-5 bullets with technical depth** - Not simplified, include specifics
+- **Threat IDs and severity** - T001 (CRITICAL), T005 (HIGH)
+- **Evidence data** - Show actual values from scan
+- **Specific remediation** - Technical implementation instructions (algorithms, key sizes, config changes)
 
-### 4. Actionability
+### 4. Actionable Remediation
 
 Every summary must:
-- Identify **specific actions** to take
-- Provide **clear timeframes** (24 hours, 1 week, etc.)
-- Explain **business justification** (prevent incidents, protect operations)
+- Provide **specific technical steps** (not just "fix this")
+- Include **implementation details** (≥32 bytes, AES-256-GCM, etc.)
+- Reference **tools and techniques** (HashiCorp Vault, express-rate-limit)
+- Specify **SLA and priority** (< 24 hours, P0)
 
 ## Testing
 

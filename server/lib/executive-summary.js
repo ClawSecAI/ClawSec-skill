@@ -1,150 +1,194 @@
 /**
- * ClawSec Executive Summary Generator
- * Transforms detailed security findings into concise, business-friendly summaries
+ * ClawSec Executive Summary Generator (Technical Version)
+ * Transforms detailed security findings into concise, technically precise summaries
  * 
- * @version 1.0.0
+ * @version 2.0.0 (Technical Revision)
  * @author Ubik (@ClawSecAI)
  * @created 2026-02-06
+ * @revised 2026-02-06 (Per Stan's feedback: technical version for technical audiences)
  * 
  * Purpose:
- * - Generate 3-5 bullet points for executive audience
- * - Use non-technical, business-friendly language
- * - Highlight business impact over technical details
- * - Provide clear, actionable recommendations
+ * - Generate 3-5 precise bullet points for technical audience
+ * - Use accurate threat terminology and identifiers
+ * - Include technical details: threat IDs, CVE references, attack vectors
+ * - Provide specific remediation paths and technical recommendations
  * 
  * Target Audience:
- * - C-suite executives (CEO, CTO, CISO)
- * - Board members
- * - Business stakeholders
- * - Non-technical decision makers
+ * - Security engineers and analysts
+ * - DevOps/SRE teams
+ * - Technical team leads
+ * - Security-conscious developers
+ * 
+ * Design Philosophy:
+ * - Precision over simplification
+ * - Technical accuracy over business language
+ * - Detailed findings over high-level summaries
+ * - Actionable remediation paths with technical specifics
  */
 
 /**
- * Business impact mapping for technical threats
- * Translates technical risks into business consequences
+ * Technical impact mapping for threat intelligence
+ * Provides technical details, attack vectors, and remediation paths
  */
-const BUSINESS_IMPACT_MAP = {
+const TECHNICAL_THREAT_MAP = {
   'T001': { // Weak Gateway Token
-    impact: 'unauthorized access to company systems',
-    consequence: 'data breach or operational disruption',
-    priority: 'immediate'
+    attack_vector: 'Token brute-force or entropy analysis',
+    technical_impact: 'Complete Gateway API compromise, full system access',
+    remediation: 'Generate cryptographically secure token (≥32 bytes, 256-bit entropy)',
+    cve_references: [],
+    owasp_category: 'A07:2021 – Identification and Authentication Failures'
   },
   'T002': { // Public Gateway Exposure
-    impact: 'system accessible from the internet',
-    consequence: 'potential ransomware or data theft',
-    priority: 'urgent'
+    attack_vector: 'Network scanning, direct internet access to Gateway API',
+    technical_impact: 'Remote exploitation, unauthorized API access, DoS attacks',
+    remediation: 'Bind Gateway to localhost (127.0.0.1) or internal network, implement firewall rules',
+    cve_references: [],
+    owasp_category: 'A01:2021 – Broken Access Control'
   },
   'T003': { // Unrestricted Tool Execution
-    impact: 'uncontrolled system commands',
-    consequence: 'system compromise or data loss',
-    priority: 'urgent'
+    attack_vector: 'Arbitrary command injection via exec tool',
+    technical_impact: 'Remote code execution (RCE), privilege escalation, lateral movement',
+    remediation: 'Implement exec policy whitelist, restrict tool access, enable sandboxing',
+    cve_references: [],
+    owasp_category: 'A03:2021 – Injection'
   },
   'T004': { // Unencrypted Session Storage
-    impact: 'sensitive conversations stored unprotected',
-    consequence: 'privacy violations or compliance breaches',
-    priority: 'high'
+    attack_vector: 'Filesystem access, memory dumps, backup extraction',
+    technical_impact: 'Session hijacking, credential extraction, privacy violation (GDPR)',
+    remediation: 'Enable session encryption (AES-256-GCM), implement secure key management',
+    cve_references: [],
+    owasp_category: 'A02:2021 – Cryptographic Failures'
   },
   'T005': { // Exposed Secrets
-    impact: 'login credentials and API keys exposed',
-    consequence: 'unauthorized cloud spending or data access',
-    priority: 'immediate'
+    attack_vector: 'Configuration file parsing, repository mining, .env exposure',
+    technical_impact: 'API key compromise, credential theft, cloud resource hijacking',
+    remediation: 'Migrate secrets to vault (HashiCorp Vault, AWS Secrets Manager), rotate exposed keys',
+    cve_references: [],
+    owasp_category: 'A02:2021 – Cryptographic Failures'
   },
   'T006': { // No Rate Limiting
-    impact: 'system vulnerable to automated attacks',
-    consequence: 'service downtime or resource abuse',
-    priority: 'medium'
+    attack_vector: 'API abuse, brute-force attacks, resource exhaustion',
+    technical_impact: 'Denial of Service (DoS), cost inflation, credential stuffing',
+    remediation: 'Implement rate limiting middleware (express-rate-limit), token bucket algorithm',
+    cve_references: [],
+    owasp_category: 'A04:2021 – Insecure Design'
   },
   'T008': { // Default Port
-    impact: 'system easier to discover by attackers',
-    consequence: 'increased reconnaissance risk',
-    priority: 'low'
+    attack_vector: 'Network reconnaissance, automated scanning (Shodan, nmap)',
+    technical_impact: 'Service fingerprinting, targeted exploitation, increased attack surface',
+    remediation: 'Configure non-standard port (49152-65535), implement port knocking',
+    cve_references: [],
+    owasp_category: 'A05:2021 – Security Misconfiguration'
   },
   'T011': { // Telegram Bot Token
-    impact: 'communication channel credentials exposed',
-    consequence: 'message interception or impersonation',
-    priority: 'high'
+    attack_vector: 'Token extraction from configuration, API abuse',
+    technical_impact: 'Bot impersonation, message interception, unauthorized command execution',
+    remediation: 'Regenerate bot token via @BotFather, store in secure vault, implement IP whitelist',
+    cve_references: [],
+    owasp_category: 'A02:2021 – Cryptographic Failures'
   },
   'T012': { // No Chat Whitelist
-    impact: 'anyone can interact with the system',
-    consequence: 'unauthorized access or resource abuse',
-    priority: 'medium'
+    attack_vector: 'Unauthorized Telegram chat access, social engineering',
+    technical_impact: 'Unrestricted API access, data exfiltration, resource abuse',
+    remediation: 'Configure TELEGRAM_ALLOWED_CHAT_IDS, implement chat ID validation',
+    cve_references: [],
+    owasp_category: 'A01:2021 – Broken Access Control'
   }
 };
 
 /**
- * Risk level translations for business audience
+ * Risk level classifications with technical severity definitions
  */
-const BUSINESS_RISK_LEVELS = {
+const TECHNICAL_RISK_LEVELS = {
   CRITICAL: {
-    label: 'Critical Business Risk',
-    description: 'requires immediate action to prevent security incident',
-    timeframe: 'within 24 hours'
+    label: 'CRITICAL',
+    cvss_range: '9.0-10.0',
+    description: 'Immediate exploitation possible, complete system compromise likely',
+    sla: '< 24 hours',
+    priority: 'P0'
   },
   HIGH: {
-    label: 'Significant Risk',
-    description: 'should be addressed urgently to protect operations',
-    timeframe: 'within 1 week'
+    label: 'HIGH',
+    cvss_range: '7.0-8.9',
+    description: 'Exploitable vulnerability, significant security impact',
+    sla: '< 7 days',
+    priority: 'P1'
   },
   MEDIUM: {
-    label: 'Moderate Risk',
-    description: 'should be planned for remediation soon',
-    timeframe: 'within 1 month'
+    label: 'MEDIUM',
+    cvss_range: '4.0-6.9',
+    description: 'Security weakness present, limited exploitability',
+    sla: '< 30 days',
+    priority: 'P2'
   },
   LOW: {
-    label: 'Minor Risk',
-    description: 'can be addressed during regular maintenance',
-    timeframe: 'within 3 months'
+    label: 'LOW',
+    cvss_range: '0.1-3.9',
+    description: 'Minor security issue, low attack probability',
+    sla: '< 90 days',
+    priority: 'P3'
   },
   SECURE: {
-    label: 'Secure',
-    description: 'no significant risks detected',
-    timeframe: 'no action required'
+    label: 'SECURE',
+    cvss_range: '0.0',
+    description: 'No exploitable vulnerabilities detected',
+    sla: 'N/A',
+    priority: 'N/A'
   }
 };
 
 /**
- * Generate executive summary from detailed findings
+ * Generate technical executive summary from security findings
  * 
  * @param {Array} findings - Array of security findings
  * @param {Object} scoreResult - Risk score calculation result
  * @param {Object} options - Generation options
- * @returns {Object} Executive summary with bullet points
+ * @returns {Object} Technical executive summary with precise details
  */
 function generateExecutiveSummary(findings = [], scoreResult = {}, options = {}) {
   const {
     maxBullets = 5,
-    includeRecommendations = true,
-    focusOnCritical = true
+    includeRemediation = true,
+    includeThreatIds = true,
+    includeOwasp = true
   } = options;
   
   // Handle secure configuration (no findings)
   if (findings.length === 0) {
     return {
-      summary: 'Your security configuration meets industry best practices with no significant risks identified.',
+      summary: 'Security audit complete: No exploitable vulnerabilities detected. Configuration meets security best practices.',
       bullets: [
-        '✅ All security controls are properly configured',
-        '✅ No exposed credentials or sensitive information detected',
-        '✅ System follows recommended security standards',
-        '📊 Recommended: Schedule quarterly security reviews to maintain this posture'
+        '✅ Zero critical/high severity findings',
+        '✅ Credential management verified secure',
+        '✅ Network exposure validated (localhost-only)',
+        '✅ Access controls implemented correctly',
+        '📊 Recommendation: Maintain current posture, schedule quarterly re-audits'
       ],
       risk_level: 'SECURE',
-      confidence: 'high'
+      confidence: 'high',
+      total_issues: 0,
+      critical_issues: 0,
+      high_issues: 0
     };
   }
   
-  // Prioritize findings
-  const prioritizedFindings = prioritizeFindings(findings, focusOnCritical);
+  // Prioritize findings by severity and exploitability
+  const prioritizedFindings = prioritizeFindings(findings);
   
-  // Generate bullet points
-  const bullets = generateBulletPoints(prioritizedFindings, scoreResult, maxBullets);
+  // Generate technical bullet points
+  const bullets = generateTechnicalBullets(prioritizedFindings, scoreResult, {
+    maxBullets,
+    includeThreatIds,
+    includeOwasp
+  });
   
-  // Generate overall summary statement
-  const summaryStatement = generateSummaryStatement(findings, scoreResult);
+  // Generate technical summary statement
+  const summaryStatement = generateTechnicalSummary(findings, scoreResult);
   
-  // Add recommendations if requested
-  if (includeRecommendations) {
-    const recommendations = generateRecommendations(prioritizedFindings, scoreResult);
-    bullets.push(...recommendations);
+  // Add remediation recommendations if requested
+  if (includeRemediation) {
+    const remediation = generateRemediationSteps(prioritizedFindings, scoreResult);
+    bullets.push(...remediation);
   }
   
   // Trim to max bullets
@@ -157,155 +201,158 @@ function generateExecutiveSummary(findings = [], scoreResult = {}, options = {})
     confidence: scoreResult.confidence || 'medium',
     total_issues: findings.length,
     critical_issues: findings.filter(f => f.severity === 'CRITICAL').length,
-    high_issues: findings.filter(f => f.severity === 'HIGH').length
+    high_issues: findings.filter(f => f.severity === 'HIGH').length,
+    medium_issues: findings.filter(f => f.severity === 'MEDIUM').length,
+    low_issues: findings.filter(f => f.severity === 'LOW').length
   };
 }
 
 /**
- * Prioritize findings by business impact
+ * Prioritize findings by severity, exploitability, and technical impact
  */
-function prioritizeFindings(findings, focusOnCritical = true) {
-  // Group by severity
-  const critical = findings.filter(f => f.severity === 'CRITICAL');
-  const high = findings.filter(f => f.severity === 'HIGH');
-  const medium = findings.filter(f => f.severity === 'MEDIUM');
-  const low = findings.filter(f => f.severity === 'LOW');
+function prioritizeFindings(findings) {
+  // Sort by severity (CRITICAL > HIGH > MEDIUM > LOW)
+  const severityOrder = { CRITICAL: 4, HIGH: 3, MEDIUM: 2, LOW: 1 };
   
-  // If focusing on critical, return only critical and high
-  if (focusOnCritical) {
-    return [...critical, ...high, ...medium].slice(0, 5);
-  }
-  
-  // Otherwise, return representative sample
-  return [
-    ...critical.slice(0, 2),
-    ...high.slice(0, 2),
-    ...medium.slice(0, 1)
-  ];
+  return findings.sort((a, b) => {
+    const severityDiff = (severityOrder[b.severity] || 0) - (severityOrder[a.severity] || 0);
+    if (severityDiff !== 0) return severityDiff;
+    
+    // If same severity, prioritize by likelihood
+    const likelihoodOrder = { HIGH: 3, MEDIUM: 2, LOW: 1 };
+    return (likelihoodOrder[b.likelihood] || 0) - (likelihoodOrder[a.likelihood] || 0);
+  });
 }
 
 /**
- * Generate business-friendly bullet points
+ * Generate technical bullet points with threat IDs and precise details
  */
-function generateBulletPoints(findings, scoreResult, maxBullets = 5) {
+function generateTechnicalBullets(findings, scoreResult, options) {
   const bullets = [];
+  const { maxBullets, includeThreatIds, includeOwasp } = options;
   
-  // Group similar findings
-  const grouped = groupSimilarFindings(findings);
+  // Reserve 1-2 bullets for remediation
+  const findingBulletLimit = maxBullets - 1;
   
-  for (const [category, categoryFindings] of Object.entries(grouped)) {
-    if (bullets.length >= maxBullets - 1) break; // Reserve space for recommendation
-    
-    const finding = categoryFindings[0]; // Use first finding as representative
-    const count = categoryFindings.length;
-    const impact = BUSINESS_IMPACT_MAP[finding.threat_id] || {
-      impact: 'security configuration issue detected',
-      consequence: 'potential security risk',
-      priority: 'medium'
+  findings.slice(0, findingBulletLimit).forEach(finding => {
+    const threatData = TECHNICAL_THREAT_MAP[finding.threat_id] || {
+      attack_vector: 'Unknown attack vector',
+      technical_impact: finding.impact || 'Security vulnerability detected',
+      remediation: 'Review configuration and apply security hardening',
+      owasp_category: 'Unknown'
     };
     
-    // Format bullet based on severity
+    // Build technical bullet with threat ID, severity, and attack vector
     const emoji = getSeverityEmoji(finding.severity);
-    const verb = count > 1 ? 'issues' : 'issue';
-    const countText = count > 1 ? ` (${count} ${verb})` : '';
+    let bullet = `${emoji} **[${finding.threat_id}] ${finding.title}** (${finding.severity})`;
     
-    let bullet = `${emoji} **${translateToBusinessLanguage(finding.title)}**${countText} - `;
-    bullet += `${capitalizeFirst(impact.impact)}, which could lead to ${impact.consequence}.`;
+    if (includeThreatIds) {
+      bullet += ` — ${threatData.attack_vector}`;
+    }
+    
+    // Add technical impact
+    bullet += `. Impact: ${threatData.technical_impact}`;
+    
+    // Add evidence if available
+    if (finding.evidence && Object.keys(finding.evidence).length > 0) {
+      const evidenceSummary = formatEvidence(finding.evidence);
+      if (evidenceSummary) {
+        bullet += ` (Evidence: ${evidenceSummary})`;
+      }
+    }
     
     bullets.push(bullet);
-  }
+  });
   
   return bullets;
 }
 
 /**
- * Group similar findings by category
+ * Format evidence for technical display
  */
-function groupSimilarFindings(findings) {
-  const groups = {
-    credentials: [],
-    access: [],
-    configuration: [],
-    monitoring: [],
-    other: []
-  };
+function formatEvidence(evidence) {
+  if (!evidence || typeof evidence !== 'object') return '';
   
-  findings.forEach(finding => {
-    if (finding.threat_id === 'T005' || finding.title?.toLowerCase().includes('credential') || finding.title?.toLowerCase().includes('secret')) {
-      groups.credentials.push(finding);
-    } else if (finding.threat_id === 'T002' || finding.threat_id === 'T012' || finding.title?.toLowerCase().includes('public') || finding.title?.toLowerCase().includes('whitelist')) {
-      groups.access.push(finding);
-    } else if (finding.threat_id === 'T001' || finding.threat_id === 'T003' || finding.title?.toLowerCase().includes('weak') || finding.title?.toLowerCase().includes('default')) {
-      groups.configuration.push(finding);
-    } else if (finding.threat_id === 'T006' || finding.title?.toLowerCase().includes('rate limit') || finding.title?.toLowerCase().includes('monitoring')) {
-      groups.monitoring.push(finding);
-    } else {
-      groups.other.push(finding);
+  const items = [];
+  for (const [key, value] of Object.entries(evidence)) {
+    if (value !== null && value !== undefined) {
+      items.push(`${key}=${JSON.stringify(value)}`);
     }
-  });
+  }
   
-  // Remove empty groups
-  return Object.fromEntries(
-    Object.entries(groups).filter(([_, items]) => items.length > 0)
-  );
+  return items.slice(0, 3).join(', '); // Limit to 3 evidence items
 }
 
 /**
- * Generate overall summary statement
+ * Generate technical summary statement with precise metrics
  */
-function generateSummaryStatement(findings, scoreResult) {
+function generateTechnicalSummary(findings, scoreResult) {
   const riskLevel = scoreResult.level || 'MEDIUM';
   const score = scoreResult.score || 50;
-  const businessRisk = BUSINESS_RISK_LEVELS[riskLevel] || BUSINESS_RISK_LEVELS.MEDIUM;
+  const techRisk = TECHNICAL_RISK_LEVELS[riskLevel] || TECHNICAL_RISK_LEVELS.MEDIUM;
   
   const criticalCount = findings.filter(f => f.severity === 'CRITICAL').length;
   const highCount = findings.filter(f => f.severity === 'HIGH').length;
-  const totalCount = findings.length;
+  const mediumCount = findings.filter(f => f.severity === 'MEDIUM').length;
+  const lowCount = findings.filter(f => f.severity === 'LOW').length;
   
-  // Construct business-friendly summary
-  let summary = `Security review identified ${totalCount} ${totalCount === 1 ? 'area' : 'areas'} requiring attention`;
+  // Build technical summary with precise counts
+  let summary = `Security audit identified ${findings.length} finding${findings.length === 1 ? '' : 's'}: `;
   
-  if (criticalCount > 0) {
-    summary += `, including ${criticalCount} ${criticalCount === 1 ? 'issue' : 'issues'} requiring immediate action`;
-  } else if (highCount > 0) {
-    summary += `, including ${highCount} ${highCount === 1 ? 'issue' : 'issues'} requiring urgent attention`;
+  const breakdowns = [];
+  if (criticalCount > 0) breakdowns.push(`${criticalCount} CRITICAL`);
+  if (highCount > 0) breakdowns.push(`${highCount} HIGH`);
+  if (mediumCount > 0) breakdowns.push(`${mediumCount} MEDIUM`);
+  if (lowCount > 0) breakdowns.push(`${lowCount} LOW`);
+  
+  summary += breakdowns.join(', ') + '. ';
+  
+  // Add risk score and CVSS range
+  summary += `Risk Score: **${score}/100** (${techRisk.label}, CVSS ${techRisk.cvss_range}). `;
+  
+  // Add SLA and priority
+  summary += `Remediation SLA: ${techRisk.sla} (${techRisk.priority} priority). `;
+  
+  // Add exploitability assessment
+  if (criticalCount > 0 || highCount > 0) {
+    summary += 'Immediate action required to prevent exploitation.';
+  } else {
+    summary += 'No immediately exploitable vulnerabilities detected.';
   }
-  
-  summary += `. Overall risk level: **${businessRisk.label}** (${score}/100) - ${businessRisk.description}.`;
   
   return summary;
 }
 
 /**
- * Generate actionable recommendations
+ * Generate technical remediation steps with specific implementation details
  */
-function generateRecommendations(findings, scoreResult) {
+function generateRemediationSteps(findings, scoreResult) {
   const recommendations = [];
   const riskLevel = scoreResult.level || 'MEDIUM';
-  const businessRisk = BUSINESS_RISK_LEVELS[riskLevel] || BUSINESS_RISK_LEVELS.MEDIUM;
+  const techRisk = TECHNICAL_RISK_LEVELS[riskLevel] || TECHNICAL_RISK_LEVELS.MEDIUM;
   
   const criticalCount = findings.filter(f => f.severity === 'CRITICAL').length;
   const highCount = findings.filter(f => f.severity === 'HIGH').length;
   
-  // Primary recommendation based on risk level
+  // Generate specific remediation for highest severity finding
+  const topFinding = findings[0];
+  if (topFinding) {
+    const threatData = TECHNICAL_THREAT_MAP[topFinding.threat_id];
+    if (threatData) {
+      recommendations.push(
+        `🔧 **Remediation Priority ${techRisk.priority}**: ${threatData.remediation}`
+      );
+    }
+  }
+  
+  // Add overall remediation guidance
   if (criticalCount > 0) {
     recommendations.push(
-      `🎯 **Recommended Action**: Address ${criticalCount} critical ${criticalCount === 1 ? 'issue' : 'issues'} ${businessRisk.timeframe} to prevent potential security incidents.`
+      `⚠️ **Urgent**: Patch ${criticalCount} critical vulnerabilit${criticalCount === 1 ? 'y' : 'ies'} within ${techRisk.sla}. Isolate affected systems if exploitation suspected.`
     );
   } else if (highCount > 0) {
     recommendations.push(
-      `🎯 **Recommended Action**: Prioritize ${highCount} high-risk ${highCount === 1 ? 'item' : 'items'} ${businessRisk.timeframe} to reduce business exposure.`
-    );
-  } else {
-    recommendations.push(
-      `🎯 **Recommended Action**: Schedule remediation of identified issues ${businessRisk.timeframe} during regular maintenance windows.`
-    );
-  }
-  
-  // Secondary recommendation for ongoing security
-  if (findings.length > 3) {
-    recommendations.push(
-      `📊 **Ongoing**: Implement automated security scanning to catch similar issues before they reach production.`
+      `📊 **Action Required**: Address ${highCount} high-severity finding${highCount === 1 ? '' : 's'} within ${techRisk.sla}. Implement monitoring for exploitation attempts.`
     );
   }
   
@@ -313,94 +360,93 @@ function generateRecommendations(findings, scoreResult) {
 }
 
 /**
- * Translate technical titles to business-friendly language
- */
-function translateToBusinessLanguage(technicalTitle) {
-  const translations = {
-    'Weak or Default Gateway Token': 'Weak system access password',
-    'Public Gateway Exposure': 'System exposed to internet',
-    'Unrestricted Tool Execution': 'Uncontrolled system commands',
-    'Unencrypted Session Storage': 'Unprotected conversation history',
-    'Exposed Secrets in Configuration': 'Credentials stored insecurely',
-    'No Rate Limiting': 'Missing protection against automated attacks',
-    'Default Port Usage': 'Using standard network port',
-    'Telegram Bot Token in Configuration': 'Communication credentials exposed',
-    'No Telegram Chat ID Whitelist': 'Unrestricted system access'
-  };
-  
-  return translations[technicalTitle] || technicalTitle.toLowerCase();
-}
-
-/**
- * Get emoji for severity level
+ * Get emoji indicator for severity level
  */
 function getSeverityEmoji(severity) {
   const emojiMap = {
-    CRITICAL: '🚨',
-    HIGH: '⚠️',
-    MEDIUM: '⚡',
-    LOW: 'ℹ️'
+    CRITICAL: '🔴',
+    HIGH: '🟠',
+    MEDIUM: '🟡',
+    LOW: '🔵'
   };
-  return emojiMap[severity] || '•';
+  return emojiMap[severity] || '⚪';
 }
 
 /**
- * Capitalize first letter
- */
-function capitalizeFirst(str) {
-  if (!str) return '';
-  return str.charAt(0).toUpperCase() + str.slice(1);
-}
-
-/**
- * Format executive summary as markdown
+ * Format executive summary as markdown with technical formatting
  */
 function formatExecutiveSummaryMarkdown(executiveSummary) {
-  let markdown = `## Executive Summary\n\n`;
+  let markdown = `## Executive Summary (Technical)\n\n`;
   markdown += `${executiveSummary.summary}\n\n`;
   
-  markdown += `### Key Points\n\n`;
+  markdown += `### Security Findings\n\n`;
   executiveSummary.bullets.forEach(bullet => {
     markdown += `${bullet}\n\n`;
   });
+  
+  // Add severity distribution table
+  if (executiveSummary.total_issues > 0) {
+    markdown += `### Severity Distribution\n\n`;
+    markdown += `| Severity | Count |\n`;
+    markdown += `|----------|-------|\n`;
+    markdown += `| 🔴 CRITICAL | ${executiveSummary.critical_issues || 0} |\n`;
+    markdown += `| 🟠 HIGH | ${executiveSummary.high_issues || 0} |\n`;
+    markdown += `| 🟡 MEDIUM | ${executiveSummary.medium_issues || 0} |\n`;
+    markdown += `| 🔵 LOW | ${executiveSummary.low_issues || 0} |\n`;
+    markdown += `| **Total** | **${executiveSummary.total_issues}** |\n\n`;
+  }
   
   return markdown;
 }
 
 /**
- * Format executive summary as plain text (for email)
+ * Format executive summary as plain text for logs/email
  */
 function formatExecutiveSummaryPlainText(executiveSummary) {
-  let text = `EXECUTIVE SUMMARY\n${'='.repeat(50)}\n\n`;
+  let text = `SECURITY AUDIT SUMMARY (TECHNICAL)\n${'='.repeat(60)}\n\n`;
   text += `${executiveSummary.summary}\n\n`;
   
-  text += `KEY POINTS:\n`;
+  text += `SECURITY FINDINGS:\n`;
   executiveSummary.bullets.forEach((bullet, i) => {
-    // Strip markdown and emoji for plain text
-    const plainBullet = bullet.replace(/[*_#]/g, '').replace(/[🚨⚠️⚡ℹ️✅🎯📊]/g, '');
+    // Strip markdown and emoji for plain text, keep technical details
+    const plainBullet = bullet
+      .replace(/\*\*/g, '')
+      .replace(/[🔴🟠🟡🔵⚪🔧⚠️📊✅]/g, '')
+      .trim();
     text += `${i + 1}. ${plainBullet}\n`;
   });
+  
+  // Add severity distribution
+  if (executiveSummary.total_issues > 0) {
+    text += `\nSEVERITY DISTRIBUTION:\n`;
+    text += `  CRITICAL: ${executiveSummary.critical_issues || 0}\n`;
+    text += `  HIGH:     ${executiveSummary.high_issues || 0}\n`;
+    text += `  MEDIUM:   ${executiveSummary.medium_issues || 0}\n`;
+    text += `  LOW:      ${executiveSummary.low_issues || 0}\n`;
+    text += `  -------------------------\n`;
+    text += `  TOTAL:    ${executiveSummary.total_issues}\n`;
+  }
   
   return text;
 }
 
 /**
- * Generate executive summary for email/Slack
- * Ultra-concise version for notifications
+ * Generate brief technical summary for notifications
  */
 function generateExecutiveSummaryBrief(findings = [], scoreResult = {}) {
   const riskLevel = scoreResult.level || 'MEDIUM';
   const criticalCount = findings.filter(f => f.severity === 'CRITICAL').length;
   const highCount = findings.filter(f => f.severity === 'HIGH').length;
+  const techRisk = TECHNICAL_RISK_LEVELS[riskLevel] || TECHNICAL_RISK_LEVELS.MEDIUM;
   
-  let brief = `Security Scan: ${findings.length} issues found (Risk: ${riskLevel}).\n`;
+  let brief = `Security Audit: ${findings.length} findings (Risk: ${riskLevel}, CVSS ${techRisk.cvss_range}).\n`;
   
   if (criticalCount > 0) {
-    brief += `⚠️ ${criticalCount} critical - immediate action required.`;
+    brief += `🔴 ${criticalCount} CRITICAL - patch within ${techRisk.sla}.`;
   } else if (highCount > 0) {
-    brief += `⚠️ ${highCount} high-priority - address within 1 week.`;
+    brief += `🟠 ${highCount} HIGH - remediate within ${techRisk.sla}.`;
   } else {
-    brief += `No critical issues - review recommended.`;
+    brief += `No critical/high findings. Review recommended.`;
   }
   
   return brief;
@@ -411,6 +457,6 @@ module.exports = {
   formatExecutiveSummaryMarkdown,
   formatExecutiveSummaryPlainText,
   generateExecutiveSummaryBrief,
-  BUSINESS_IMPACT_MAP,
-  BUSINESS_RISK_LEVELS
+  TECHNICAL_THREAT_MAP,
+  TECHNICAL_RISK_LEVELS
 };

@@ -241,29 +241,41 @@
 - **Completed:** 2026-02-06 21:20 UTC (Trello Card #26 - Ubik subagent)
 
 ### 3.3 Output Processing
-- **Status:** ✅ Done (Executive Summary Module Complete - 2026-02-06 21:45 UTC)
+- **Status:** ✅ Done (Threshold Research Complete - 2026-02-06 22:10 UTC)
 - **Components:**
   - [x] Structured report extraction
   - [x] JSON validation (comprehensive schema-based validation)
   - [x] **Score calculation consistency (0-100 normalization implemented)**
+  - [x] **CVSS-aligned thresholds (UPDATED 2026-02-06 22:10 UTC):**
+    - CRITICAL: 90-100 (was 80-100) - Aligned with CVSS v3.x/v4.0 (9.0-10.0)
+    - HIGH: 70-89 (was 60-79) - Aligned with CVSS v3.x/v4.0 (7.0-8.9)
+    - MEDIUM: 40-69 (was 30-59) - Aligned with CVSS v3.x/v4.0 (4.0-6.9)
+    - LOW: 1-39 (was 1-29) - Aligned with CVSS v3.x/v4.0 (0.1-3.9)
+    - SECURE: 0 (unchanged)
+  - [x] **Threshold validation research (NEW 2026-02-06 22:10 UTC):**
+    - Comprehensive industry standards research (NIST/NVD, CVSS, OWASP)
+    - Vendor comparison (Qualys, Tenable, Rapid7, Snyk, GitHub, AWS)
+    - Standards alignment analysis (PCI-DSS, ISO 27001, NIST 800-53)
+    - Research documented in `docs/threshold-research.md` (8KB)
   - [x] **Recommendation prioritization (NEW: P0-P3 system implemented)**
   - [x] **Executive summary generation (ENHANCED: Business-friendly v1.0.0)**
   - [x] **NEW: Risk score calculator with 0-100 scale (v1.0.0)**
   - [x] **NEW: Context-aware scoring (credential exposure, public access, etc.)**
   - [x] **NEW: Diminishing returns algorithm (prevents score inflation)**
   - [x] **NEW: Multiple scan type support (config, vulnerability, compliance, etc.)**
-  - [x] **NEW: Comprehensive test suite (30+ test cases, 9 categories)**
-  - [x] **NEW: Score calculation documentation (8KB comprehensive guide)**
-- **Executive Summary Module (2026-02-06 21:45 UTC):**
-  - [x] Business-friendly language translator (technical → executive)
-  - [x] 3-5 bullet point formatter (concise, digestible)
-  - [x] Business impact mapping (consequences, not technical details)
-  - [x] Risk level communication (timeframes, priorities)
+  - [x] **NEW: Comprehensive test suite (30+ test cases, 9 categories, CVSS-aligned)**
+  - [x] **NEW: Score calculation documentation (8KB comprehensive guide, CVSS-aligned)**
+- **Executive Summary Module - Technical Version ✅ (2026-02-06 22:05 UTC):**
+  - [x] **REVISED to technical version** (per Stan's feedback - precision over simplification)
+  - [x] Technical threat terminology (not business language)
+  - [x] Threat ID system (T001-T999 with attack vectors, CVSS, OWASP mapping)
+  - [x] Evidence-based findings (show config values, entropy, etc.)
+  - [x] Specific remediation paths (algorithms, key sizes, tools)
+  - [x] 3-5 technical bullet points (detailed, precise)
   - [x] Multiple output formats (markdown, plain text, brief)
-  - [x] Comprehensive test suite (40+ tests, 8 categories)
-  - [x] Sample outputs documentation (5 scenarios)
+  - [x] Comprehensive test suite (40+ tests, 8 categories - technical version)
   - [x] Integration with report pipeline (server/index.js)
-  - [x] Complete API documentation (docs/executive-summary.md)
+  - [x] Complete technical documentation (docs/executive-summary.md)
 - **Recommendation Prioritization Engine (v1.0.0 - 2026-02-06):**
   - [x] Multi-dimensional priority scoring (severity + exploitability + impact)
   - [x] P0-P3 priority level system with clear thresholds
@@ -575,7 +587,11 @@
     - API response format documentation
     - Usage guide with code samples
     - Report output examples
-  - Status: ✅ Ready for production use
+  - **Update 2026-02-06 21:54 UTC**: Fixed P3 threshold issue (40→50)
+    - Adjusted PRIORITY_THRESHOLDS.P2 from 40 to 50
+    - Low severity findings now correctly classified as P3
+    - All 15 tests now passing (Test 4 & Test 13 fixed)
+  - Status: ✅ Production ready - All tests passing (15/15)
 - ✅ **Risk Score Calculation System (Trello Card #qbP7d9g3 - 2026-02-06 21:30 UTC)**
   - Implemented comprehensive 0-100 score normalization system
   - Created score-calculator.js module (13KB) with:
