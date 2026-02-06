@@ -1,0 +1,36 @@
+{
+  "gateway": {
+    "bind": "0.0.0.0",
+    "port": 2024,
+    "token": "test-token-123"
+  },
+  "sessions": {
+    "encryption": {
+      "enabled": false
+    }
+  },
+  "tools": {
+    "exec": {
+      "policy": "allow-all"
+    },
+    "browser": {
+      "enabled": true
+    }
+  },
+  "channels": {
+    "telegram": {
+      "bot_token": "1234567890:ABCdefGHIjklMNOpqrsTUVwxyz1234567890",
+      "chat_id": "123456789"
+    }
+  },
+  "nodes": [
+    {
+      "name": "iphone",
+      "permissions": ["camera", "notifications"]
+    }
+  ],
+  "skills": [
+    "trello",
+    "weather"
+  ]
+}

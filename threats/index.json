@@ -1,0 +1,56 @@
+{
+  "version": "0.1.0-hackathon",
+  "generated": "2026-02-06T01:50:00Z",
+  "threat_count": 18,
+  "categories": {
+    "core": {
+      "file": "threats/core.md",
+      "size_kb": 8,
+      "threat_count": 5,
+      "description": "Critical threats that apply to all OpenClaw deployments",
+      "threats": [
+        {"id": "T001", "name": "Default or Weak Gateway Token", "severity": "CRITICAL"},
+        {"id": "T002", "name": "Public Gateway Exposure", "severity": "HIGH"},
+        {"id": "T003", "name": "Tool Policy Bypass via Prompt Injection", "severity": "HIGH"},
+        {"id": "T004", "name": "Unencrypted Session Storage", "severity": "MEDIUM"},
+        {"id": "T005", "name": "Exposed Secrets in Configuration", "severity": "HIGH"}
+      ]
+    },
+    "gateway": {
+      "file": "threats/gateway.md",
+      "size_kb": 3,
+      "threat_count": 5,
+      "description": "Gateway-specific security issues",
+      "threats": [
+        {"id": "T006", "name": "No Rate Limiting", "severity": "MEDIUM"},
+        {"id": "T007", "name": "Insecure CORS Configuration", "severity": "MEDIUM"},
+        {"id": "T008", "name": "Default Port Usage", "severity": "LOW"},
+        {"id": "T009", "name": "Missing Request Size Limits", "severity": "MEDIUM"},
+        {"id": "T010", "name": "No Request Timeout", "severity": "LOW"}
+      ]
+    },
+    "channels": {
+      "file": "threats/channels.md",
+      "size_kb": 5,
+      "threat_count": 8,
+      "description": "Messaging channel integration security",
+      "threats": [
+        {"id": "T011", "name": "Telegram Bot Token in Configuration", "severity": "HIGH"},
+        {"id": "T012", "name": "No Telegram Chat ID Whitelist", "severity": "MEDIUM"},
+        {"id": "T013", "name": "Discord Webhook URL Exposure", "severity": "MEDIUM"},
+        {"id": "T014", "name": "Message Logging Without Encryption", "severity": "MEDIUM"},
+        {"id": "T015", "name": "No Message Rate Limiting Per User", "severity": "LOW"},
+        {"id": "T016", "name": "Webhook URL in Git History", "severity": "HIGH"},
+        {"id": "T017", "name": "Missing Signature Verification", "severity": "HIGH"},
+        {"id": "T018", "name": "Channel Credentials in Logs", "severity": "HIGH"}
+      ]
+    }
+  },
+  "severity_distribution": {
+    "CRITICAL": 1,
+    "HIGH": 10,
+    "MEDIUM": 5,
+    "LOW": 2
+  },
+  "note": "Hackathon MVP - 18 threats across 3 categories. Expanding coverage."
+}
