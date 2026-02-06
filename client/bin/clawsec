@@ -1,0 +1,183 @@
+#!/usr/bin/env node
+/**
+ * ClawSec CLI - Security audit client for OpenClaw
+ * 
+ * Usage:
+ *   clawsec scan <config-file>
+ *   clawsec health
+ *   clawsec version
+ */
+
+const fs = require('fs');
+const path = require('path');
+const http = require('http');
+
+const SERVER_URL = process.env.CLAWSEC_SERVER || 'http://localhost:4021';
+const VERSION = '0.1.0-hackathon';
+
+/**
+ * HTTP request helper
+ */
+function request(method, path, body = null) {
+  return new Promise((resolve, reject) => {
+    const url = new URL(path, SERVER_URL);
+    const options = {
+      method,
+      hostname: url.hostname,
+      port: url.port,
+      path: url.pathname,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    };
+    
+    const req = http.request(options, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        try {
+          resolve({
+            status: res.statusCode,
+            body: data ? JSON.parse(data) : null
+          });
+        } catch (e) {
+          resolve({
+            status: res.statusCode,
+            body: data
+          });
+        }
+      });
+    });
+    
+    req.on('error', reject);
+    
+    if (body) {
+      req.write(JSON.stringify(body));
+    }
+    
+    req.end();
+  });
+}
+
+/**
+ * Commands
+ */
+const commands = {
+  async scan(configPath) {
+    if (!configPath) {
+      console.error('❌ Error: Config file required');
+      console.error('Usage: clawsec scan <config-file>');
+      process.exit(1);
+    }
+    
+    if (!fs.existsSync(configPath)) {
+      console.error(`❌ Error: Config file not found: ${configPath}`);
+      process.exit(1);
+    }
+    
+    console.log(`\n🔍 Scanning configuration: ${configPath}\n`);
+    
+    try {
+      const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      const res = await request('POST', '/api/v1/scan', config);
+      
+      if (res.status === 402) {
+        console.error('💰 Payment Required');
+        console.error(JSON.stringify(res.body, null, 2));
+        process.exit(1);
+      }
+      
+      if (res.status !== 200) {
+        console.error(`❌ Scan failed (${res.status})`);
+        console.error(res.body);
+        process.exit(1);
+      }
+      
+      console.log(`✅ Scan complete!\n`);
+      console.log(`📊 Scan ID: ${res.body.scan_id}`);
+      console.log(`🔍 Findings: ${res.body.findings_count}`);
+      console.log(`⚠️  Risk Level: ${res.body.risk_level}\n`);
+      
+      // Save report
+      const reportPath = `clawsec-report-${Date.now()}.md`;
+      fs.writeFileSync(reportPath, res.body.report);
+      console.log(`📝 Report saved to: ${reportPath}\n`);
+      
+      // Print summary
+      console.log('--- Report Preview ---\n');
+      const lines = res.body.report.split('\n');
+      console.log(lines.slice(0, 30).join('\n'));
+      console.log('\n... (see full report in file) ...\n');
+      
+    } catch (error) {
+      console.error(`❌ Error: ${error.message}`);
+      process.exit(1);
+    }
+  },
+  
+  async health() {
+    try {
+      const res = await request('GET', '/health');
+      if (res.status === 200 && res.body.status === 'healthy') {
+        console.log('✅ ClawSec server is healthy');
+        console.log(`   Version: ${res.body.version}`);
+        console.log(`   Uptime: ${Math.floor(res.body.uptime)}s`);
+      } else {
+        console.error('❌ Server unhealthy');
+        process.exit(1);
+      }
+    } catch (error) {
+      console.error(`❌ Cannot connect to server: ${error.message}`);
+      console.error(`   Server URL: ${SERVER_URL}`);
+      process.exit(1);
+    }
+  },
+  
+  version() {
+    console.log(`ClawSec CLI v${VERSION}`);
+    console.log(`Server: ${SERVER_URL}`);
+  },
+  
+  help() {
+    console.log(`
+ClawSec CLI - AI-powered security audits for OpenClaw
+
+Usage:
+  clawsec scan <config-file>    Scan OpenClaw configuration
+  clawsec health                Check server health
+  clawsec version               Show version
+  clawsec help                  Show this help
+
+Examples:
+  clawsec scan config.json
+  clawsec scan examples/sample-scan.json
+  
+Environment Variables:
+  CLAWSEC_SERVER    Server URL (default: http://localhost:4021)
+
+GitHub: https://github.com/ClawSecAI/ClawSec-skill
+    `);
+  }
+};
+
+/**
+ * Main
+ */
+async function main() {
+  const args = process.argv.slice(2);
+  const command = args[0] || 'help';
+  const commandArgs = args.slice(1);
+  
+  if (!commands[command]) {
+    console.error(`❌ Unknown command: ${command}`);
+    commands.help();
+    process.exit(1);
+  }
+  
+  await commands[command](...commandArgs);
+}
+
+main().catch(err => {
+  console.error(`❌ Fatal error: ${err.message}`);
+  process.exit(1);
+});
