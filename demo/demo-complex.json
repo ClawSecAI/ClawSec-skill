@@ -1,0 +1,139 @@
+{
+  "scenario": "Complex Multi-Service Deployment with Critical Exposures",
+  "description": "Production-like setup with multiple credentials hardcoded, weak authentication, and overprivileged tools",
+  "expected_findings": [
+    "Numeric gateway token (zero entropy)",
+    "Public bind address (0.0.0.0)",
+    "Multiple hardcoded credentials (AWS, OpenAI, database)",
+    "Exec and browser tools enabled",
+    "Multiple channel tokens exposed",
+    "No HTTPS/TLS",
+    "Debug logging with sensitive data",
+    "No rate limiting",
+    "Overprivileged skill permissions",
+    "Weak database password",
+    "No session management",
+    "Missing audit logging"
+  ],
+  "expected_risk_level": "CRITICAL",
+  "gateway": {
+    "token": "12345",
+    "bind": "0.0.0.0",
+    "port": 2024,
+    "https": false,
+    "cors": {
+      "enabled": true,
+      "origin": "*"
+    },
+    "rate_limit": {
+      "enabled": false
+    }
+  },
+  "channels": {
+    "telegram": {
+      "enabled": true,
+      "bot_token": "7891234567:AAHEXAMPLEabcdefghijklmnopqrstuvwxyz",
+      "allowed_users": [],
+      "privacy": {
+        "store_messages": true,
+        "retention_days": 365
+      }
+    },
+    "discord": {
+      "enabled": true,
+      "bot_token": "MTIzNDU2Nzg5MDEyMzQ1Njc4OQ.GaBcDe.FgHiJkLmNoPqRsTuVwXyZ1234567890ABCDEF",
+      "guild_id": "123456789012345678"
+    },
+    "whatsapp": {
+      "enabled": true,
+      "phone": "+12025551234",
+      "api_key": "EAABsbCS1iHgBO7ZCnKxZCZCvwqZBk8L4ZCkwRtE"
+    }
+  },
+  "tools": {
+    "exec": {
+      "enabled": true,
+      "shell": "/bin/bash",
+      "allowed_commands": [],
+      "timeout": 0,
+      "max_output": 999999999
+    },
+    "browser": {
+      "enabled": true,
+      "headless": false,
+      "disable_security": true
+    },
+    "filesystem": {
+      "enabled": true,
+      "allowed_paths": ["/"],
+      "allow_write": true,
+      "allow_delete": true
+    }
+  },
+  "skills": {
+    "aws": {
+      "enabled": true,
+      "access_key_id": "AKIAIOSFODNN7EXAMPLE",
+      "secret_access_key": "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+      "region": "us-east-1",
+      "permissions": ["*"]
+    },
+    "openai": {
+      "enabled": true,
+      "api_key": "sk-proj-abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJKLMNOP",
+      "model": "gpt-4",
+      "max_tokens": 999999,
+      "temperature": 1.5
+    },
+    "github": {
+      "enabled": true,
+      "token": "ghp_1234567890abcdefghijklmnopqrstuvwxyz",
+      "permissions": ["repo", "delete_repo", "admin:org"]
+    },
+    "stripe": {
+      "enabled": true,
+      "secret_key": "sk_live_51A1B2C3D4E5F6G7H8I9J0K1L2M3N4O5P6Q7R8S9T0",
+      "publishable_key": "pk_live_51A1B2C3D4E5F6G7H8I9J0K1L2M3N4O5P6"
+    }
+  },
+  "database": {
+    "postgres": {
+      "enabled": true,
+      "connection_string": "postgresql://admin:password123@db.example.com:5432/production",
+      "ssl": false,
+      "max_connections": 1000
+    },
+    "redis": {
+      "enabled": true,
+      "url": "redis://:weakpassword@cache.example.com:6379/0",
+      "password": "weakpassword"
+    },
+    "mongodb": {
+      "enabled": true,
+      "connection_string": "mongodb://root:root@mongo.example.com:27017/prod?authSource=admin",
+      "auth": false
+    }
+  },
+  "logging": {
+    "level": "debug",
+    "file": "/var/log/openclaw-full.log",
+    "include_secrets": true,
+    "rotate": false,
+    "max_size": 999999999
+  },
+  "session": {
+    "secret": "keyboard_cat",
+    "cookie": {
+      "secure": false,
+      "httpOnly": false,
+      "sameSite": "none"
+    }
+  },
+  "security": {
+    "prompt_injection_guard": false,
+    "output_sanitization": false,
+    "rate_limiting": false,
+    "ip_whitelist": [],
+    "audit_logging": false
+  }
+}

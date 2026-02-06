@@ -1,0 +1,124 @@
+## X402 Integration Progress Update (Ubik)
+
+**Status**: 🟡 IN PROGRESS (Blocked - waiting for credentials)
+
+### ✅ Completed
+
+1. **SDK Research & Documentation**
+   - Analyzed X402 protocol documentation (Coinbase CDP)
+   - Reviewed Express.js middleware integration guide
+   - Network: Base Sepolia (testnet) → Base (mainnet migration path)
+
+2. **Code Implementation**
+   - ✅ Created `server/index-x402.js` with full X402 integration
+   - ✅ Implemented payment middleware for `/api/v1/scan` endpoint
+   - ✅ Configured facilitator client (testnet: https://www.x402.org/facilitator)
+   - ✅ Set up automatic payment verification flow
+   - ✅ Added health check monitoring for X402 status
+   - ✅ Created installation script: `scripts/install-x402.sh`
+
+3. **Documentation**
+   - ✅ Comprehensive integration guide: `docs/X402_INTEGRATION_GUIDE.md`
+   - ✅ Implementation notes: `IMPLEMENTATION_NOTES.md`
+   - ✅ Testing strategy (local → testnet → mainnet)
+   - ✅ Troubleshooting guide
+
+4. **Configuration**
+   - ✅ Updated `.env` with X402 placeholders
+   - ✅ Added CDP API key fields (awaiting values)
+   - ✅ Configured CAIP-2 network identifiers
+   - ✅ Set pricing: $0.01 USDC per scan
+
+### 🚧 Blockers (Need Stan's Input)
+
+**BLOCKER #1: CDP Credentials Missing**
+- You mentioned adding `CDP_CLIENT_API_KEY` and `CDP_SECRET_API_KEY` to .env
+- I checked `/root/.openclaw/workspace/clawsec/.env` but they're not there
+- **Question**: Did you add them to a different .env file? Or are they not committed to git?
+- **Action needed**: Please confirm where the CDP credentials are, or paste them in the .env file
+
+**BLOCKER #2: Wallet Address**
+- You're creating a USDC wallet in testnet Base
+- I need the wallet address to configure the `payTo` parameter in X402 middleware
+- **Action needed**: Once the wallet is created, please add `WALLET_ADDRESS=0x...` to .env
+
+**Note about webhook secret**: You're correct - X402 doesn't need a webhook secret! The SDK uses HTTP-native payment flow (402 status code + headers), not webhooks.
+
+### 📋 Next Steps (Once Unblocked)
+
+**Immediate** (can do today after credentials):
+1. Install X402 SDK: `bash scripts/install-x402.sh`
+2. Add CDP credentials to .env
+3. Add wallet address to .env
+4. Replace `server/index.js` with `server/index-x402.js` (or merge)
+5. Test locally with `ENABLE_PAYMENT=false` (no payment verification)
+6. Deploy to Railway
+
+**Short-term** (this week):
+1. Enable payments: `ENABLE_PAYMENT=true`
+2. Test 402 payment flow (request → 402 response → payment → scan)
+3. End-to-end testing on Base Sepolia testnet
+4. Client SDK integration (MetaMask/WalletConnect)
+
+**Before hackathon deadline**:
+1. Migrate to mainnet (Base)
+2. Production testing with real USDC
+3. Performance optimization
+
+### 🔧 Technical Details
+
+**X402 Middleware** (automatically handles):
+- ✅ Payment signature verification
+- ✅ 402 Payment Required response generation
+- ✅ Facilitator communication
+- ✅ On-chain settlement
+- ✅ Request forwarding after successful payment
+
+**Network Configuration**:
+- Testnet: `eip155:84532` (Base Sepolia)
+- Mainnet: `eip155:8453` (Base)
+- Facilitator: Coinbase-hosted (free tier: 1000 tx/month)
+
+**Pricing Model**:
+- Basic scan: $0.01 USDC
+- (Future) Thorough scan: $0.03 USDC
+
+### 📂 Files Created/Modified
+
+- ✅ `server/index-x402.js` - X402-integrated server (16KB)
+- ✅ `scripts/install-x402.sh` - SDK installation script
+- ✅ `docs/X402_INTEGRATION_GUIDE.md` - Complete integration guide (10KB)
+- ✅ `IMPLEMENTATION_NOTES.md` - Technical notes and blockers
+- ✅ `.env` - Added CDP and wallet placeholders
+
+### ❓ Questions for You
+
+1. **CDP Credentials**: Where are the `CDP_CLIENT_API_KEY` and `CDP_SECRET_API_KEY`? Can you paste them in `.env`?
+
+2. **Wallet Address**: Once you create the testnet Base wallet, please share the address (format: `0x...`)
+
+3. **Testing Preference**: Should I start with testnet (Base Sepolia) or mainnet (Base)? I recommend testnet first for safety.
+
+4. **Deployment Timeline**: When do you want this deployed to Railway? I can push immediately after credentials are available.
+
+### 🛠️ No Action Needed From You (I'll Handle)
+
+- ✅ SDK installation
+- ✅ Code integration
+- ✅ Railway deployment
+- ✅ Testing and verification
+- ✅ Documentation
+
+---
+
+**@stanhaupt1** Please provide:
+1. CDP credentials location (or paste in .env)
+2. Wallet address (once created)
+
+Then I can immediately:
+1. Install X402 SDK
+2. Configure and test integration
+3. Deploy to Railway
+4. Verify payment flow
+
+Should take ~30 minutes after credentials are available!

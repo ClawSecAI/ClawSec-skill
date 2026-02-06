@@ -1,0 +1,312 @@
+{
+  "scenario": "Well-Secured Compliant Deployment",
+  "description": "Production-grade configuration following security best practices, OWASP LLM Top 10, and GDPR compliance",
+  "expected_findings": [],
+  "expected_risk_level": "SECURE",
+  "gateway": {
+    "token": "gwtk_a8f4e2c9b7d6f3e1a5c8b4d9f2e7a3c1b6d8f4e2a9c7b5d3f1e8a4c6b2d9f7e3",
+    "bind": "127.0.0.1",
+    "port": 2024,
+    "https": true,
+    "tls": {
+      "cert": "/etc/openclaw/certs/server.crt",
+      "key": "/etc/openclaw/certs/server.key",
+      "ca": "/etc/openclaw/certs/ca.crt",
+      "min_version": "TLSv1.3"
+    },
+    "cors": {
+      "enabled": true,
+      "origin": "https://trusted-domain.com",
+      "credentials": true
+    },
+    "rate_limit": {
+      "enabled": true,
+      "window_ms": 900000,
+      "max_requests": 100,
+      "strategy": "sliding_window"
+    },
+    "authentication": {
+      "type": "jwt",
+      "algorithm": "RS256",
+      "issuer": "https://auth.example.com",
+      "audience": "openclaw-api"
+    }
+  },
+  "channels": {
+    "telegram": {
+      "enabled": true,
+      "bot_token_env": "TELEGRAM_BOT_TOKEN",
+      "allowed_users": [
+        123456789,
+        987654321
+      ],
+      "privacy": {
+        "store_messages": false,
+        "retention_days": 30,
+        "encrypt_at_rest": true,
+        "gdpr_compliant": true
+      },
+      "security": {
+        "rate_limit": true,
+        "command_whitelist": ["start", "help", "status"],
+        "block_forwarded": true
+      }
+    }
+  },
+  "tools": {
+    "exec": {
+      "enabled": false,
+      "reason": "High risk - use containerized alternatives"
+    },
+    "browser": {
+      "enabled": false,
+      "reason": "Not required for current use case"
+    },
+    "filesystem": {
+      "enabled": true,
+      "allowed_paths": [
+        "/workspace/safe-zone"
+      ],
+      "allow_write": true,
+      "allow_delete": false,
+      "sandboxed": true
+    }
+  },
+  "skills": {
+    "aws": {
+      "enabled": true,
+      "credentials_source": "iam_role",
+      "role_arn": "arn:aws:iam::123456789012:role/OpenClawServiceRole",
+      "session_duration": 3600,
+      "permissions": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "dynamodb:GetItem",
+        "dynamodb:PutItem"
+      ],
+      "denied_actions": [
+        "iam:*",
+        "s3:DeleteBucket",
+        "ec2:TerminateInstances"
+      ]
+    },
+    "openai": {
+      "enabled": true,
+      "api_key_env": "OPENAI_API_KEY",
+      "model": "gpt-4-turbo",
+      "max_tokens": 4096,
+      "temperature": 0.7,
+      "content_filter": true,
+      "user_tracking": true
+    }
+  },
+  "database": {
+    "postgres": {
+      "enabled": true,
+      "connection_string_env": "DATABASE_URL",
+      "ssl": {
+        "enabled": true,
+        "mode": "require",
+        "ca_cert": "/etc/openclaw/certs/db-ca.crt"
+      },
+      "max_connections": 10,
+      "connection_timeout": 5000,
+      "read_only_user": true
+    },
+    "redis": {
+      "enabled": true,
+      "url_env": "REDIS_URL",
+      "tls": true,
+      "password_env": "REDIS_PASSWORD",
+      "max_retries": 3
+    }
+  },
+  "logging": {
+    "level": "info",
+    "file": "/var/log/openclaw/app.log",
+    "include_secrets": false,
+    "rotate": true,
+    "max_size": "100M",
+    "max_files": 10,
+    "compress": true,
+    "format": "json",
+    "sanitize_patterns": [
+      "token",
+      "password",
+      "secret",
+      "key",
+      "authorization"
+    ]
+  },
+  "session": {
+    "secret_env": "SESSION_SECRET",
+    "cookie": {
+      "secure": true,
+      "httpOnly": true,
+      "sameSite": "strict",
+      "maxAge": 3600000
+    },
+    "rolling": true,
+    "resave": false,
+    "saveUninitialized": false
+  },
+  "security": {
+    "prompt_injection_guard": true,
+    "patterns": [
+      "ignore previous instructions",
+      "disregard all rules",
+      "you are now",
+      "roleplay as"
+    ],
+    "output_sanitization": true,
+    "rate_limiting": {
+      "enabled": true,
+      "per_user": 100,
+      "per_ip": 1000,
+      "window": "15m"
+    },
+    "ip_whitelist": [
+      "10.0.0.0/8",
+      "192.168.0.0/16"
+    ],
+    "audit_logging": {
+      "enabled": true,
+      "events": [
+        "authentication",
+        "authorization",
+        "tool_execution",
+        "config_change",
+        "security_alert"
+      ],
+      "retention_days": 90,
+      "siem_integration": "https://siem.example.com/webhook"
+    },
+    "vulnerability_scanning": {
+      "enabled": true,
+      "schedule": "0 2 * * *",
+      "auto_remediate": false
+    }
+  },
+  "compliance": {
+    "owasp_llm_top_10": {
+      "LLM01_prompt_injection": {
+        "status": "implemented",
+        "controls": ["input_validation", "context_isolation", "output_encoding"]
+      },
+      "LLM02_insecure_output": {
+        "status": "implemented",
+        "controls": ["output_sanitization", "content_filtering"]
+      },
+      "LLM03_training_data_poisoning": {
+        "status": "not_applicable",
+        "reason": "Using pre-trained models only"
+      },
+      "LLM04_model_denial_of_service": {
+        "status": "implemented",
+        "controls": ["rate_limiting", "token_limits", "timeout_enforcement"]
+      },
+      "LLM05_supply_chain": {
+        "status": "implemented",
+        "controls": ["dependency_scanning", "sbom_generation", "signature_verification"]
+      },
+      "LLM06_excessive_agency": {
+        "status": "implemented",
+        "controls": ["least_privilege", "tool_restrictions", "human_in_loop"]
+      },
+      "LLM07_system_prompt_leakage": {
+        "status": "implemented",
+        "controls": ["prompt_isolation", "output_filtering"]
+      },
+      "LLM08_overreliance": {
+        "status": "implemented",
+        "controls": ["confidence_thresholds", "user_validation", "audit_trails"]
+      },
+      "LLM09_misinformation": {
+        "status": "implemented",
+        "controls": ["fact_checking", "source_attribution", "uncertainty_disclosure"]
+      },
+      "LLM10_model_theft": {
+        "status": "implemented",
+        "controls": ["api_authentication", "rate_limiting", "usage_monitoring"]
+      }
+    },
+    "gdpr": {
+      "data_protection": {
+        "encryption_at_rest": true,
+        "encryption_in_transit": true,
+        "algorithm": "AES-256-GCM"
+      },
+      "user_consent": {
+        "explicit_consent": true,
+        "granular_permissions": true,
+        "withdrawal_mechanism": true
+      },
+      "right_to_access": {
+        "data_export": true,
+        "format": "json",
+        "delivery_time": "30_days"
+      },
+      "right_to_deletion": {
+        "enabled": true,
+        "soft_delete": false,
+        "retention_override": false
+      },
+      "right_to_rectification": {
+        "enabled": true,
+        "user_editable": true
+      },
+      "data_minimization": {
+        "collect_only_necessary": true,
+        "automatic_deletion": true,
+        "retention_period": "30_days"
+      },
+      "breach_notification": {
+        "enabled": true,
+        "notification_time": "72_hours",
+        "authority": "data_protection_authority"
+      },
+      "data_protection_officer": {
+        "appointed": true,
+        "contact": "dpo@example.com"
+      }
+    },
+    "certifications": {
+      "iso_27001": {
+        "certified": true,
+        "expiry": "2027-12-31"
+      },
+      "soc2_type2": {
+        "certified": true,
+        "expiry": "2027-06-30"
+      }
+    }
+  },
+  "monitoring": {
+    "health_checks": {
+      "enabled": true,
+      "interval": 60,
+      "endpoints": [
+        "/health",
+        "/metrics"
+      ]
+    },
+    "alerting": {
+      "enabled": true,
+      "channels": ["pagerduty", "slack"],
+      "severity_threshold": "high"
+    },
+    "metrics": {
+      "enabled": true,
+      "provider": "prometheus",
+      "endpoint": "/metrics"
+    }
+  },
+  "backup": {
+    "enabled": true,
+    "schedule": "0 3 * * *",
+    "retention": 30,
+    "encryption": true,
+    "offsite": true,
+    "test_restore": "monthly"
+  }
+}

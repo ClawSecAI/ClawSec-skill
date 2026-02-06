@@ -78,8 +78,8 @@ The server is already configured in `server/index.js` and `server/payment.js`.
 
 **Pricing Tiers:**
 
-- **Basic**: $0.01 USDC (Haiku model - fast)
-- **Thorough**: $0.03 USDC (Sonnet model - comprehensive)
+- **Basic**: $1.00 USDC (Haiku model - fast)
+- **Thorough**: $3.00 USDC (Sonnet model - comprehensive)
 
 ### 4. Start Server
 
@@ -171,7 +171,7 @@ curl -X POST https://clawsec-skill-production.up.railway.app/api/v1/scan \
   "body": {
     "error": "Payment Required",
     "protocol": "X402",
-    "price": "$0.01",
+    "price": "$1.00",
     "network": "eip155:84532",
     "instructions": "Include PAYMENT-SIGNATURE header with signed payment payload"
   }
@@ -307,8 +307,8 @@ PAYMENT-REQUIRED: <base64-payment-instructions>
 
 | Tier | Model | Price | Speed | Quality |
 |------|-------|-------|-------|---------|
-| Basic | Claude 3.5 Haiku | $0.01 | ~4s | 85% |
-| Thorough | Claude 3.5 Sonnet | $0.03 | ~10s | 95% |
+| Basic | Claude 3.5 Haiku | $1.00 | ~4s | 85% |
+| Thorough | Claude 3.5 Sonnet | $3.00 | ~10s | 95% |
 
 **At scale (10,000 scans/month):**
 
@@ -352,7 +352,7 @@ git push origin main
 
 ### 4. Test with Real USDC
 
-**⚠️ WARNING**: Test with small amounts first (e.g., $0.01)
+**⚠️ WARNING**: Test with small amounts first (e.g., $1.00 or $3.00 on testnet before mainnet)
 
 ```bash
 # Use mainnet wallet with real USDC

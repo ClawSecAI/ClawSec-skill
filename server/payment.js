@@ -33,8 +33,20 @@ function initializePaymentServer() {
   // Get wallet address from env
   const payTo = process.env.WALLET_ADDRESS || '0x3e6C025206fcefFCd1637d46ff0534C8783dE3a8';
   
+  // ⚠️ CRITICAL SECURITY CHECK: Prevent testnet wallet on mainnet
+  if (isProduction && payTo === '0x3e6C025206fcefFCd1637d46ff0534C8783dE3a8') {
+    throw new Error('SECURITY ERROR: Testnet wallet detected in production! Set a mainnet wallet in WALLET_ADDRESS');
+  }
+  
   if (!payTo || payTo === '0x0000000000000000000000000000000000000000') {
     console.warn('⚠️  Warning: Using default wallet address. Set WALLET_ADDRESS in .env');
+  }
+  
+  // Log network configuration for verification
+  console.log(`🔒 Security Check: ${isProduction ? 'PRODUCTION' : 'TESTNET'} mode`);
+  console.log(`   Network: ${network}`);
+  if (!isProduction) {
+    console.log('   ⚠️  TESTNET MODE - Using test wallets only');
   }
   
   // Create facilitator client

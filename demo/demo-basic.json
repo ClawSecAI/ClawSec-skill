@@ -1,0 +1,41 @@
+{
+  "scenario": "Basic OpenClaw Deployment with Common Misconfigurations",
+  "description": "Typical user deployment with weak gateway token, public binding, and exec tool enabled",
+  "expected_findings": [
+    "Weak gateway token (low entropy)",
+    "Public bind address (0.0.0.0 exposure)",
+    "Exec tool enabled (high risk)",
+    "Telegram bot token exposure"
+  ],
+  "expected_risk_level": "HIGH",
+  "gateway": {
+    "token": "gateway_abc123_weak_token",
+    "bind": "0.0.0.0",
+    "port": 2024,
+    "https": false
+  },
+  "channels": {
+    "telegram": {
+      "enabled": true,
+      "bot_token": "7891234567:AAHEXAMPLEabcdefghijklmnopqrstuvwxyz",
+      "allowed_users": []
+    }
+  },
+  "tools": {
+    "exec": {
+      "enabled": true,
+      "shell": "/bin/bash",
+      "allowed_commands": []
+    },
+    "browser": {
+      "enabled": false
+    }
+  },
+  "skills": {
+    "enabled": []
+  },
+  "logging": {
+    "level": "debug",
+    "file": "/var/log/openclaw.log"
+  }
+}

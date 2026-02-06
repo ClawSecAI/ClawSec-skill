@@ -14,11 +14,26 @@ const { scanWithPayment, checkPaymentStatus } = require('./client/x402-client');
 // Test configuration
 const config = {
   apiUrl: process.env.API_URL || 'http://localhost:4021',
-  // Test wallet from /root/.openclaw/testwallets.md (WALLET2 - has 20 USDC)
+  // ⚠️ TEST WALLET ONLY - From /root/.openclaw/testwallets.md (WALLET2 - has 20 USDC)
+  // NEVER USE THIS PRIVATE KEY ON MAINNET!
   privateKey: process.env.TEST_WALLET_PK || '0x78a0fc05754adb30c23ab3fa9d227c6146b26be760b2f74c050eb225591d8c76',
-  network: 'eip155:84532', // Base Sepolia
+  network: 'eip155:84532', // Base Sepolia (TESTNET ONLY - chainId 84532)
   rpcUrl: process.env.BASE_SEPOLIA_RPC || 'https://sepolia.base.org'
 };
+
+// ⚠️ CRITICAL SECURITY CHECK: Verify we're on testnet
+if (config.network !== 'eip155:84532') {
+  console.error('❌ SECURITY ERROR: This script uses testnet wallets!');
+  console.error('   Network must be eip155:84532 (Base Sepolia)');
+  console.error(`   Current: ${config.network}`);
+  process.exit(1);
+}
+
+// Additional check: Ensure we're not accidentally hitting mainnet
+if (config.apiUrl.includes('mainnet') || config.rpcUrl.includes('mainnet')) {
+  console.error('❌ SECURITY ERROR: Mainnet URL detected with testnet wallet!');
+  process.exit(1);
+}
 
 // Test scan data (intentionally insecure to trigger findings)
 const testScanData = {
