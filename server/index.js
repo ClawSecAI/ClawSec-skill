@@ -11,6 +11,8 @@ const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
+const { findExposedSecrets, calculateCredentialRisk } = require('./patterns');
+const { validateScanReport, validateOrThrow } = require('./lib/validator');
 
 const app = express();
 const PORT = process.env.PORT || 4021;
@@ -124,14 +126,32 @@ app.post('/api/v1/scan', async (req, res) => {
     // Generate report
     const report = generateReport(scanId, scanInput, findings, threatsIndex);
     
-    // Return report
-    res.json({
+    // Build response object
+    const response = {
       scan_id: scanId,
       timestamp: new Date().toISOString(),
       report: report,
       findings_count: findings.length,
-      risk_level: calculateRiskLevel(findings)
-    });
+      risk_level: calculateRiskLevel(findings),
+      findings: findings // Include findings for validation and API consumers
+    };
+    
+    // Validate response before sending
+    const validation = validateScanReport(response);
+    if (!validation.valid) {
+      console.error('Report validation failed:', validation.errors);
+      // Log error but don't fail the request in production
+      // In development, you might want to throw an error
+      if (process.env.NODE_ENV === 'development') {
+        return res.status(500).json({
+          error: 'Report validation failed',
+          details: validation.errors
+        });
+      }
+    }
+    
+    // Return report
+    res.json(response);
     
   } catch (error) {
     console.error('Scan error:', error);
@@ -208,21 +228,55 @@ function analyzeConfiguration(config, threatsIndex) {
     });
   }
   
-  // Check for exposed secrets (T005)
+  // Check for exposed secrets (T005) - Enhanced detection
   const secrets = findExposedSecrets(config);
   if (secrets.length > 0) {
+    // Group by severity for better reporting
+    const criticalSecrets = secrets.filter(s => s.severity === 'CRITICAL');
+    const highSecrets = secrets.filter(s => s.severity === 'HIGH');
+    
+    const overallSeverity = criticalSecrets.length > 0 ? 'CRITICAL' : 
+                            highSecrets.length > 0 ? 'HIGH' : 'MEDIUM';
+    
+    const secretTypes = secrets.map(s => `${s.type} (${s.count}x)`).join(', ');
+    
     findings.push({
       threat_id: 'T005',
-      severity: 'HIGH',
+      severity: overallSeverity,
       title: 'Exposed Secrets in Configuration',
-      description: 'API keys or tokens found in configuration',
-      impact: 'Credential leakage, unauthorized service access',
+      description: `Found ${secrets.length} types of hardcoded credentials: ${secretTypes}`,
+      impact: 'Credential leakage, unauthorized service access, account compromise',
       likelihood: 'HIGH',
-      evidence: { exposed_keys: secrets },
+      evidence: { 
+        exposed_secrets: secrets.map(s => ({
+          type: s.type,
+          severity: s.severity,
+          count: s.count,
+          sample: s.sample,
+          impact: s.impact
+        })),
+        total_count: secrets.reduce((sum, s) => sum + s.count, 0),
+        credential_risk: calculateCredentialRisk(secrets)
+      },
       remediation: {
-        immediate: ['Move all secrets to .env file', 'Add .env to .gitignore'],
-        short_term: ['Rotate all exposed credentials', 'Update config to use environment variables'],
-        long_term: ['Implement secrets management (Vault, etc.)']
+        immediate: [
+          'CRITICAL: Move all secrets to .env file immediately',
+          'Add .env to .gitignore',
+          'Remove hardcoded credentials from config files',
+          `Rotate ${secrets.filter(s => s.severity === 'CRITICAL' || s.severity === 'HIGH').length} critical/high-risk credentials`
+        ],
+        short_term: [
+          'Update config to use environment variables (${VAR_NAME} syntax)',
+          'Audit git history for leaked credentials (git log -p | grep -i "key\\|token\\|password")',
+          'Revoke and rotate all exposed credentials',
+          'Enable secret scanning in CI/CD pipeline'
+        ],
+        long_term: [
+          'Implement secrets management solution (HashiCorp Vault, AWS Secrets Manager)',
+          'Add pre-commit hooks to prevent credential commits (git-secrets, detect-secrets)',
+          'Regular security audits and credential rotation policy',
+          'Implement credential encryption at rest'
+        ]
       }
     });
   }
@@ -326,28 +380,7 @@ function analyzeConfiguration(config, threatsIndex) {
   return findings;
 }
 
-/**
- * Find exposed secrets in configuration
- */
-function findExposedSecrets(config) {
-  const secrets = [];
-  const secretPatterns = [
-    { name: 'API Key', pattern: /[a-zA-Z0-9]{32,}/ },
-    { name: 'Bot Token', pattern: /\d{8,10}:[A-Za-z0-9_-]{35}/ },
-    { name: 'Anthropic Key', pattern: /sk-ant-[a-zA-Z0-9-_]{32,}/ }
-  ];
-  
-  const configStr = JSON.stringify(config);
-  
-  secretPatterns.forEach(({ name, pattern }) => {
-    const matches = configStr.match(pattern);
-    if (matches) {
-      secrets.push({ type: name, found: true });
-    }
-  });
-  
-  return secrets;
-}
+// findExposedSecrets now imported from patterns.js module
 
 /**
  * Calculate overall risk level based on findings

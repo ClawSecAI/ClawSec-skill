@@ -1,0 +1,115 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://clawsec.ai/schemas/report.json",
+  "title": "ClawSec Scan Report",
+  "description": "Schema for ClawSec security audit reports",
+  "type": "object",
+  "required": ["scan_id", "timestamp", "report", "findings_count", "risk_level"],
+  "properties": {
+    "scan_id": {
+      "type": "string",
+      "pattern": "^clawsec-[0-9]+-[a-z0-9]+$",
+      "description": "Unique identifier for the scan"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of scan completion"
+    },
+    "report": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Markdown-formatted security report"
+    },
+    "findings_count": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Total number of security findings"
+    },
+    "risk_level": {
+      "type": "string",
+      "enum": ["CRITICAL", "HIGH", "MEDIUM", "LOW"],
+      "description": "Overall risk assessment"
+    },
+    "findings": {
+      "type": "array",
+      "description": "Optional detailed findings array",
+      "items": {
+        "$ref": "#/definitions/finding"
+      }
+    }
+  },
+  "definitions": {
+    "finding": {
+      "type": "object",
+      "required": ["threat_id", "severity", "title", "description", "impact", "likelihood"],
+      "properties": {
+        "threat_id": {
+          "type": "string",
+          "pattern": "^T[0-9]{3}$",
+          "description": "Threat identifier (e.g., T001)"
+        },
+        "severity": {
+          "type": "string",
+          "enum": ["CRITICAL", "HIGH", "MEDIUM", "LOW"],
+          "description": "Severity level of the finding"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "description": "Short title for the finding"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Detailed description of the security issue"
+        },
+        "impact": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Potential impact if exploited"
+        },
+        "likelihood": {
+          "type": "string",
+          "enum": ["CRITICAL", "HIGH", "MEDIUM", "LOW"],
+          "description": "Likelihood of exploitation"
+        },
+        "evidence": {
+          "type": "object",
+          "description": "Evidence supporting the finding",
+          "additionalProperties": true
+        },
+        "remediation": {
+          "type": "object",
+          "description": "Remediation steps organized by timeframe",
+          "properties": {
+            "immediate": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "short_term": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "long_term": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

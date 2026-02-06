@@ -1,0 +1,63 @@
+{
+  "name": "Complex Security Scan Test",
+  "description": "Config with 10+ issues across multiple categories",
+  "config": {
+    "gateway": {
+      "token": "admin123",
+      "bind": "0.0.0.0",
+      "port": 2024
+    },
+    "channels": {
+      "telegram": {
+        "bot_token": "987654321:XYZabcDEFghiJKLmnoPQRstuvWXYZ0987654"
+      },
+      "discord": {
+        "bot_token": "MTIzNDU2Nzg5MDEyMzQ1Njc4.GhI_jK.LmNoPqRsTuVwXyZaBcDeFgHiJkLmNoPqRsTuVwXy"
+      },
+      "slack": {
+        "bot_token": "xoxb-1234567890-1234567890123-AbCdEfGhIjKlMnOpQrStUvWx",
+        "signing_secret": "1234567890abcdef1234567890abcdef"
+      }
+    },
+    "tools": {
+      "exec": {
+        "policy": "allow-all",
+        "allowed_commands": []
+      },
+      "browser": {
+        "enabled": true,
+        "allow_javascript": true,
+        "allow_downloads": true
+      },
+      "fetch": {
+        "enabled": true,
+        "allow_localhost": true
+      }
+    },
+    "api_keys": {
+      "openai": "sk-proj-1234567890abcdefghijklmnopqrstuvwxyz1234567890",
+      "anthropic": "sk-ant-api03-1234567890abcdefghijklmnopqrstuvwxyz",
+      "github": "ghp_1234567890abcdefghijklmnopqrstuvwxyz"
+    },
+    "sessions": {
+      "encryption": {
+        "enabled": false
+      },
+      "storage": "/tmp/openclaw-sessions"
+    }
+  },
+  "expected_issues": [
+    "Weak gateway token (CRITICAL)",
+    "Public gateway exposure (HIGH)",
+    "Multiple hardcoded bot tokens (HIGH)",
+    "Exposed API keys (HIGH)",
+    "Unrestricted exec (HIGH)",
+    "Browser JS enabled (MEDIUM)",
+    "Browser downloads enabled (MEDIUM)",
+    "Fetch allows localhost (MEDIUM)",
+    "No Telegram whitelist (MEDIUM)",
+    "Unencrypted sessions (MEDIUM)",
+    "Insecure session storage (LOW)",
+    "Default port (LOW)"
+  ]
+}

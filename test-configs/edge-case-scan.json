@@ -1,0 +1,61 @@
+{
+  "name": "Edge Case Security Scan Test",
+  "description": "Minimal issues, secure config with unusual patterns",
+  "config": {
+    "gateway": {
+      "token": "${GATEWAY_TOKEN}",
+      "bind": "127.0.0.1",
+      "port": 8443,
+      "rate_limit": {
+        "enabled": true,
+        "max_requests": 100,
+        "window": "1m"
+      }
+    },
+    "channels": {
+      "telegram": {
+        "bot_token": "${TELEGRAM_BOT_TOKEN}",
+        "allowed_chats": [123456789, 987654321]
+      }
+    },
+    "tools": {
+      "exec": {
+        "policy": "allowlist",
+        "allowed_commands": ["ls", "cat", "grep", "find"]
+      },
+      "browser": {
+        "enabled": true,
+        "allow_javascript": false,
+        "allow_downloads": false
+      },
+      "fetch": {
+        "enabled": true,
+        "allow_localhost": false
+      }
+    },
+    "sessions": {
+      "encryption": {
+        "enabled": true,
+        "key": "${SESSION_ENCRYPTION_KEY}"
+      },
+      "storage": "${HOME}/.openclaw/sessions"
+    },
+    "logging": {
+      "level": "info",
+      "sanitize_secrets": true
+    },
+    "security": {
+      "prompt_guard": {
+        "enabled": true,
+        "threshold": 0.8
+      }
+    }
+  },
+  "expected_issues": [
+    "Should have minimal or no issues",
+    "All secrets use environment variables",
+    "Network isolation configured",
+    "Rate limiting enabled",
+    "Session encryption enabled"
+  ]
+}

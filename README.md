@@ -23,6 +23,8 @@ Manual security audits are time-consuming and require deep expertise.
 ClawSec provides instant, comprehensive security analysis:
 
 - **Automated Scanning**: Extract and analyze OpenClaw configurations
+- **Advanced Pattern Matching**: Detect 50+ credential types (AWS, GCP, Azure, OpenAI, GitHub, databases, etc.)
+- **Context-Aware Detection**: Smart filtering to reduce false positives (environment variables safe)
 - **X402 Payments**: USDC micropayments for audits ($0.01-$0.10)
 - **LLM Analysis**: Claude Sonnet 4.5 with 800KB threat intelligence
 - **Actionable Reports**: Professional Markdown/JSON reports with remediation steps
