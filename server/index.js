@@ -14,6 +14,9 @@ const path = require('path');
 const { findExposedSecrets, calculateCredentialRisk } = require('./patterns');
 const { validateScanReport, validateOrThrow } = require('./lib/validator');
 const { calculateRiskScore, generateScoreSummary } = require('./lib/score-calculator');
+const { buildOptimizedContext } = require('./lib/context-optimizer');
+const { prioritizeFindings, generatePriorityReport } = require('./lib/recommendation-engine');
+const { generateExecutiveSummary, formatExecutiveSummaryMarkdown } = require('./lib/executive-summary');
 
 const app = express();
 const PORT = process.env.PORT || 4021;
@@ -111,12 +114,9 @@ app.post('/api/v1/scan', async (req, res) => {
       console.log('Payment received (demo mode):', paymentHeader.substring(0, 20) + '...');
     }
     
-    // Load threat database
+    // Load threat database index
     const indexPath = path.join(__dirname, '..', 'threats', 'index.json');
     const threatsIndex = JSON.parse(fs.readFileSync(indexPath, 'utf8'));
-    
-    const coreThreatPath = path.join(__dirname, '..', 'threats', 'core.md');
-    const coreThreats = fs.readFileSync(coreThreatPath, 'utf8');
     
     // Generate scan ID
     const scanId = `clawsec-${Date.now()}-${Math.random().toString(36).substring(7)}`;
@@ -124,13 +124,38 @@ app.post('/api/v1/scan', async (req, res) => {
     // Analyze scan (simplified for hackathon MVP)
     const findings = analyzeConfiguration(scanInput, threatsIndex);
     
+    // Build optimized threat context based on scan configuration
+    // This intelligently selects relevant threats and fits within token budget
+    const modelName = process.env.LLM_MODEL || 'claude-3-5-haiku-20241022';
+    const threatsDir = path.join(__dirname, '..', 'threats');
+    
+    const optimizedContext = buildOptimizedContext({
+      scanConfig: scanInput,
+      detectedThreats: findings.map(f => f.threat_id),
+      threatsDir,
+      modelName,
+      maxContextPercent: 40 // Use 40% of context window for threat intel
+    });
+    
+    // Log optimization stats
+    console.log(`Context optimization: ${optimizedContext.stats.contextTokens} tokens (${optimizedContext.stats.budgetUsedPercent}% of budget)`);
+    console.log(`Categories loaded: ${optimizedContext.categories.map(c => c.name).join(', ')}`);
+    if (optimizedContext.skipped.length > 0) {
+      console.log(`Categories skipped: ${optimizedContext.skipped.map(s => s.name).join(', ')}`);
+    }
+    
     // Calculate risk score using new 0-100 scale
     const scoreResult = calculateRiskScore(findings, {
       scanType: 'config'
     });
     
-    // Generate report
-    const report = generateReport(scanId, scanInput, findings, threatsIndex, scoreResult);
+    // Prioritize findings using recommendation engine
+    const prioritized = prioritizeFindings(findings, {
+      scanType: 'config'
+    });
+    
+    // Generate report with prioritized recommendations
+    const report = generateReport(scanId, scanInput, findings, threatsIndex, scoreResult, prioritized);
     
     // Build response object
     const response = {
@@ -141,7 +166,28 @@ app.post('/api/v1/scan', async (req, res) => {
       risk_level: scoreResult.level,
       risk_score: scoreResult.score, // NEW: 0-100 normalized score
       score_confidence: scoreResult.confidence,
-      findings: findings // Include findings for validation and API consumers
+      findings: findings, // Include findings for validation and API consumers
+      prioritized_recommendations: prioritized ? {
+        summary: prioritized.summary,
+        rankings: prioritized.rankings.map(f => ({
+          threat_id: f.threat_id,
+          title: f.title,
+          severity: f.severity,
+          priority_level: f.priority.level,
+          priority_score: f.priority.score,
+          time_to_fix: f.priority.timeToFix.duration,
+          reasoning: f.priority.reasoning
+        }))
+      } : null,
+      optimization: { // Token optimization statistics
+        model: optimizedContext.stats.modelName,
+        scan_tokens: optimizedContext.stats.scanTokens,
+        context_tokens: optimizedContext.stats.contextTokens,
+        total_tokens: optimizedContext.stats.totalTokens,
+        categories_loaded: optimizedContext.stats.categoriesLoaded,
+        categories_skipped: optimizedContext.stats.categoriesSkipped,
+        budget_used_percent: optimizedContext.stats.budgetUsedPercent
+      }
     };
     
     // Validate response before sending
@@ -404,9 +450,9 @@ function calculateRiskLevel(findings) {
 }
 
 /**
- * Generate security report
+ * Generate security report with prioritized recommendations
  */
-function generateReport(scanId, config, findings, threatsIndex, scoreResult) {
+function generateReport(scanId, config, findings, threatsIndex, scoreResult, prioritized = null) {
   const timestamp = new Date().toISOString();
   const riskLevel = scoreResult.level;
   const riskScore = scoreResult.score;
@@ -417,30 +463,16 @@ function generateReport(scanId, config, findings, threatsIndex, scoreResult) {
   report += `**ClawSec Version**: 0.1.0-hackathon\n\n`;
   report += `---\n\n`;
   
-  // Executive Summary
-  report += `## Executive Summary\n\n`;
-  report += `This security audit analyzed your OpenClaw configuration and identified **${findings.length} security issues**.\n\n`;
-  report += `**Overall Risk Level**: ${getRiskEmoji(riskLevel)} **${riskLevel}**\n`;
-  report += `**Risk Score**: **${riskScore}/100** (${scoreResult.confidence} confidence)\n\n`;
+  // Executive Summary - Business-Friendly
+  const executiveSummary = generateExecutiveSummary(findings, scoreResult, {
+    maxBullets: 5,
+    includeRecommendations: true,
+    focusOnCritical: true
+  });
   
-  if (findings.length > 0) {
-    report += `### Key Findings\n`;
-    findings.slice(0, 3).forEach(f => {
-      report += `- **${f.title}** (${f.severity})\n`;
-    });
-    report += `\n`;
-    
-    report += `### Immediate Actions Required\n`;
-    findings.filter(f => f.severity === 'CRITICAL' || f.severity === 'HIGH')
-      .slice(0, 3)
-      .forEach((f, i) => {
-        report += `${i + 1}. Fix **${f.title}**\n`;
-      });
-  } else {
-    report += `No critical security issues detected. Your configuration follows security best practices.\n`;
-  }
-  
-  report += `\n---\n\n`;
+  report += formatExecutiveSummaryMarkdown(executiveSummary);
+  report += `**Risk Score**: **${riskScore}/100** | **Overall Risk**: ${getRiskEmoji(riskLevel)} **${riskLevel}** (${scoreResult.confidence} confidence)\n\n`;
+  report += `---\n\n`;
   
   // Risk Breakdown
   const counts = {
@@ -478,6 +510,11 @@ function generateReport(scanId, config, findings, threatsIndex, scoreResult) {
   report += `| 🟢 Low      | ${counts.low} | ${Math.round(counts.low / counts.total * 100)}% |\n`;
   report += `| **Total**   | **${findings.length}** | **100%** |\n\n`;
   report += `---\n\n`;
+  
+  // Prioritized Recommendations (if available)
+  if (prioritized && findings.length > 0) {
+    report += generatePriorityReport(prioritized);
+  }
   
   // Detailed Findings
   if (findings.length > 0) {
