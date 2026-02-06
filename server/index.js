@@ -13,6 +13,7 @@ const fs = require('fs');
 const path = require('path');
 const { findExposedSecrets, calculateCredentialRisk } = require('./patterns');
 const { validateScanReport, validateOrThrow } = require('./lib/validator');
+const { calculateRiskScore, generateScoreSummary } = require('./lib/score-calculator');
 
 const app = express();
 const PORT = process.env.PORT || 4021;
@@ -123,8 +124,13 @@ app.post('/api/v1/scan', async (req, res) => {
     // Analyze scan (simplified for hackathon MVP)
     const findings = analyzeConfiguration(scanInput, threatsIndex);
     
+    // Calculate risk score using new 0-100 scale
+    const scoreResult = calculateRiskScore(findings, {
+      scanType: 'config'
+    });
+    
     // Generate report
-    const report = generateReport(scanId, scanInput, findings, threatsIndex);
+    const report = generateReport(scanId, scanInput, findings, threatsIndex, scoreResult);
     
     // Build response object
     const response = {
@@ -132,7 +138,9 @@ app.post('/api/v1/scan', async (req, res) => {
       timestamp: new Date().toISOString(),
       report: report,
       findings_count: findings.length,
-      risk_level: calculateRiskLevel(findings),
+      risk_level: scoreResult.level,
+      risk_score: scoreResult.score, // NEW: 0-100 normalized score
+      score_confidence: scoreResult.confidence,
       findings: findings // Include findings for validation and API consumers
     };
     
@@ -398,9 +406,10 @@ function calculateRiskLevel(findings) {
 /**
  * Generate security report
  */
-function generateReport(scanId, config, findings, threatsIndex) {
+function generateReport(scanId, config, findings, threatsIndex, scoreResult) {
   const timestamp = new Date().toISOString();
-  const riskLevel = calculateRiskLevel(findings);
+  const riskLevel = scoreResult.level;
+  const riskScore = scoreResult.score;
   
   let report = `# OpenClaw Security Audit Report\n\n`;
   report += `**Generated**: ${timestamp}\n`;
@@ -411,7 +420,8 @@ function generateReport(scanId, config, findings, threatsIndex) {
   // Executive Summary
   report += `## Executive Summary\n\n`;
   report += `This security audit analyzed your OpenClaw configuration and identified **${findings.length} security issues**.\n\n`;
-  report += `**Overall Risk Level**: ${getRiskEmoji(riskLevel)} **${riskLevel}**\n\n`;
+  report += `**Overall Risk Level**: ${getRiskEmoji(riskLevel)} **${riskLevel}**\n`;
+  report += `**Risk Score**: **${riskScore}/100** (${scoreResult.confidence} confidence)\n\n`;
   
   if (findings.length > 0) {
     report += `### Key Findings\n`;
@@ -442,6 +452,24 @@ function generateReport(scanId, config, findings, threatsIndex) {
   counts.total = findings.length || 1; // Avoid division by zero
   
   report += `## Risk Breakdown\n\n`;
+  
+  // Add score details
+  report += `### Risk Score Analysis\n\n`;
+  report += `- **Final Score**: ${riskScore}/100\n`;
+  report += `- **Base Score**: ${scoreResult.breakdown.baseScore}\n`;
+  report += `- **Context Multiplier**: ${scoreResult.breakdown.contextMultiplier}x\n`;
+  report += `- **Risk Level**: ${riskLevel}\n`;
+  report += `- **Confidence**: ${scoreResult.confidence.toUpperCase()}\n\n`;
+  
+  if (scoreResult.breakdown.appliedFactors && scoreResult.breakdown.appliedFactors.length > 0) {
+    report += `**Risk Factors Applied**:\n`;
+    scoreResult.breakdown.appliedFactors.forEach(factor => {
+      report += `- ${factor.name} (${factor.multiplier}x): ${factor.description}\n`;
+    });
+    report += `\n`;
+  }
+  
+  report += `### Severity Distribution\n\n`;
   report += `| Severity | Count | Percentage |\n`;
   report += `|----------|-------|------------|\n`;
   report += `| 🔴 Critical | ${counts.critical} | ${Math.round(counts.critical / counts.total * 100)}% |\n`;
