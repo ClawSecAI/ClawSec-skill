@@ -12,11 +12,11 @@
  * - Applies diminishing returns for multiple findings (prevents score inflation)
  * - Considers credential exposure, configuration issues, and attack likelihood
  * 
- * Risk Level Thresholds:
- * - CRITICAL: 80-100 (immediate action required)
- * - HIGH: 60-79 (urgent remediation needed)
- * - MEDIUM: 30-59 (should be addressed soon)
- * - LOW: 1-29 (minimal risk, monitor)
+ * Risk Level Thresholds (CVSS v3.x/v4.0 Aligned):
+ * - CRITICAL: 90-100 (immediate action required - fix within 24h)
+ * - HIGH: 70-89 (urgent remediation needed - fix within 1 week)
+ * - MEDIUM: 40-69 (should be addressed soon - fix within 1 month)
+ * - LOW: 1-39 (minimal risk, monitor and plan fix)
  * - SECURE: 0 (no issues detected)
  */
 
@@ -33,14 +33,21 @@ const SEVERITY_WEIGHTS = {
 
 /**
  * Risk level thresholds (0-100 scale)
- * These define clear boundaries for risk classification
+ * Aligned with CVSS v3.x/v4.0 standards (NIST/NVD)
+ * 
+ * Reference: https://nvd.nist.gov/vuln-metrics/cvss
+ * - CRITICAL: 9.0-10.0 (90-100%) - Severe issues requiring immediate action
+ * - HIGH: 7.0-8.9 (70-89%) - Urgent vulnerabilities needing quick remediation
+ * - MEDIUM: 4.0-6.9 (40-69%) - Moderate risks that should be addressed
+ * - LOW: 0.1-3.9 (1-39%) - Minor issues with minimal risk
+ * - NONE: 0.0 (0%) - No security issues detected
  */
 const RISK_THRESHOLDS = {
-  CRITICAL: 80,
-  HIGH: 60,
-  MEDIUM: 30,
-  LOW: 1,
-  SECURE: 0
+  CRITICAL: 90,  // Aligned with CVSS v3.x/v4.0 (9.0/10.0)
+  HIGH: 70,      // Aligned with CVSS v3.x/v4.0 (7.0/10.0)
+  MEDIUM: 40,    // Aligned with CVSS v3.x/v4.0 (4.0/10.0)
+  LOW: 1,        // Aligned with CVSS v3.x/v4.0 (0.1/10.0)
+  SECURE: 0      // Aligned with CVSS v3.x/v4.0 (0.0/10.0)
 };
 
 /**
@@ -261,13 +268,13 @@ function scoreToRiskLevel(score) {
 function riskLevelToScoreRange(level) {
   switch (level.toUpperCase()) {
     case 'CRITICAL':
-      return { min: 80, max: 100 };
+      return { min: 90, max: 100 };
     case 'HIGH':
-      return { min: 60, max: 79 };
+      return { min: 70, max: 89 };
     case 'MEDIUM':
-      return { min: 30, max: 59 };
+      return { min: 40, max: 69 };
     case 'LOW':
-      return { min: 1, max: 29 };
+      return { min: 1, max: 39 };
     case 'SECURE':
       return { min: 0, max: 0 };
     default:

@@ -11,13 +11,20 @@ ClawSec uses a sophisticated risk scoring algorithm that normalizes all security
 
 ## Score Scale (0-100)
 
-| Score Range | Risk Level | Description | Action Required |
-|-------------|-----------|-------------|-----------------|
-| **80-100** | 🔴 CRITICAL | Severe security issues requiring immediate action | Fix within 24 hours |
-| **60-79** | 🟠 HIGH | Significant vulnerabilities needing urgent remediation | Fix within 1 week |
-| **30-59** | 🟡 MEDIUM | Moderate security concerns that should be addressed | Fix within 1 month |
-| **1-29** | 🟢 LOW | Minor issues with minimal risk | Monitor and plan fix |
-| **0** | ✅ SECURE | No security issues detected | Maintain current posture |
+**Aligned with CVSS v3.x/v4.0 Standards** (NIST/NVD)
+
+| Score Range | Risk Level | Description | Action Required | CVSS Equivalent |
+|-------------|-----------|-------------|-----------------|-----------------|
+| **90-100** | 🔴 CRITICAL | Severe security issues requiring immediate action | Fix within 24 hours | 9.0-10.0 |
+| **70-89** | 🟠 HIGH | Significant vulnerabilities needing urgent remediation | Fix within 1 week | 7.0-8.9 |
+| **40-69** | 🟡 MEDIUM | Moderate security concerns that should be addressed | Fix within 1 month | 4.0-6.9 |
+| **1-39** | 🟢 LOW | Minor issues with minimal risk | Monitor and plan fix | 0.1-3.9 |
+| **0** | ✅ SECURE | No security issues detected | Maintain current posture | 0.0 |
+
+**Standards Alignment:**
+- **CVSS v3.x/v4.0:** Common Vulnerability Scoring System (industry standard)
+- **NIST/NVD:** National Vulnerability Database thresholds
+- **Used by:** Qualys, Tenable, Rapid7, Snyk, GitHub Security, AWS Inspector
 
 ---
 
@@ -232,25 +239,33 @@ Diminishing returns prevent score inflation from minor issues.
 
 ## Threshold Rationale
 
-### Why 80+ is CRITICAL
+### Why 90+ is CRITICAL (CVSS v3.x/v4.0: 9.0-10.0)
+- **Industry Standard:** Aligned with NIST, NVD, and all major security vendors
 - Requires immediate action (within 24 hours)
-- Typically indicates multiple severe vulnerabilities or credential exposure
-- System is at high risk of compromise
+- Reserved for truly severe vulnerabilities with high impact and exploitability
+- System is at critical risk of compromise
+- Examples: Exposed credentials, RCE vulnerabilities, complete system compromise
 
-### Why 60-79 is HIGH
+### Why 70-89 is HIGH (CVSS v3.x/v4.0: 7.0-8.9)
+- **Industry Standard:** Used by Qualys, Tenable, Rapid7, GitHub Security
 - Urgent remediation needed (within 1 week)
-- Significant vulnerabilities present
-- Attack surface is exposed
+- Significant vulnerabilities with probable exploitation
+- Attack surface is exposed with high likelihood of breach
+- Examples: SQL injection, authentication bypass, sensitive data exposure
 
-### Why 30-59 is MEDIUM
+### Why 40-69 is MEDIUM (CVSS v3.x/v4.0: 4.0-6.9)
+- **Industry Standard:** Common threshold for moderate risks
 - Should be addressed soon (within 1 month)
-- Moderate risk level
+- Moderate risk with possible exploitation under certain conditions
 - Defense-in-depth improvements needed
+- Examples: Weak configurations, missing security headers, outdated dependencies
 
-### Why 1-29 is LOW
+### Why 1-39 is LOW (CVSS v3.x/v4.0: 0.1-3.9)
+- **Industry Standard:** Informational or minimal risk
 - Minimal risk (monitor and plan)
-- Minor configuration improvements
-- No immediate threat
+- Minor configuration improvements or informational findings
+- Low likelihood of exploitation or minimal impact
+- Examples: Default ports, verbose error messages, missing best practices
 
 ### Why 0 is SECURE
 - No security issues detected

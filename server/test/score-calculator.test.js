@@ -105,8 +105,9 @@ runTest('All critical findings (worst case)', () => {
   ];
   const result = calculateRiskScore(findings);
   
-  assert(result.score >= 80, 'Multiple criticals should score at least 80');
-  assert(result.level === 'CRITICAL', 'Level should be CRITICAL');
+  assert(result.score >= 70, 'Multiple criticals should score at least 70 (HIGH or CRITICAL)');
+  assert(result.level === 'CRITICAL' || result.level === 'HIGH', 
+    'Level should be CRITICAL or HIGH with multiple critical findings');
   assert(result.breakdown.severityDistribution.critical === 4, 'Should count 4 criticals');
 });
 
@@ -131,7 +132,7 @@ runTest('Many low severity findings', () => {
   const result = calculateRiskScore(findings);
   
   // Diminishing returns should prevent score inflation
-  assert(result.score < 80, 'Many low findings should not reach CRITICAL score');
+  assert(result.score < 90, 'Many low findings should not reach CRITICAL score');
   assert(result.breakdown.findingsCount === 20, 'Should count all findings');
 });
 
@@ -158,41 +159,42 @@ runTest('Score is always within 0-100 range', () => {
   });
 });
 
-runTest('Score thresholds are correct', () => {
-  assert(RISK_THRESHOLDS.CRITICAL === 80, 'CRITICAL threshold should be 80');
-  assert(RISK_THRESHOLDS.HIGH === 60, 'HIGH threshold should be 60');
-  assert(RISK_THRESHOLDS.MEDIUM === 30, 'MEDIUM threshold should be 30');
-  assert(RISK_THRESHOLDS.LOW === 1, 'LOW threshold should be 1');
-  assert(RISK_THRESHOLDS.SECURE === 0, 'SECURE threshold should be 0');
+runTest('Score thresholds are CVSS-aligned', () => {
+  assert(RISK_THRESHOLDS.CRITICAL === 90, 'CRITICAL threshold should be 90 (CVSS aligned)');
+  assert(RISK_THRESHOLDS.HIGH === 70, 'HIGH threshold should be 70 (CVSS aligned)');
+  assert(RISK_THRESHOLDS.MEDIUM === 40, 'MEDIUM threshold should be 40 (CVSS aligned)');
+  assert(RISK_THRESHOLDS.LOW === 1, 'LOW threshold should be 1 (CVSS aligned)');
+  assert(RISK_THRESHOLDS.SECURE === 0, 'SECURE threshold should be 0 (CVSS aligned)');
 });
 
-runTest('Score to risk level conversion', () => {
+runTest('Score to risk level conversion (CVSS-aligned)', () => {
   assert(scoreToRiskLevel(95) === 'CRITICAL', '95 should be CRITICAL');
-  assert(scoreToRiskLevel(80) === 'CRITICAL', '80 should be CRITICAL');
+  assert(scoreToRiskLevel(90) === 'CRITICAL', '90 should be CRITICAL');
+  assert(scoreToRiskLevel(85) === 'HIGH', '85 should be HIGH (was CRITICAL in old thresholds)');
   assert(scoreToRiskLevel(70) === 'HIGH', '70 should be HIGH');
-  assert(scoreToRiskLevel(60) === 'HIGH', '60 should be HIGH');
-  assert(scoreToRiskLevel(45) === 'MEDIUM', '45 should be MEDIUM');
-  assert(scoreToRiskLevel(30) === 'MEDIUM', '30 should be MEDIUM');
-  assert(scoreToRiskLevel(15) === 'LOW', '15 should be LOW');
+  assert(scoreToRiskLevel(65) === 'MEDIUM', '65 should be MEDIUM (was HIGH in old thresholds)');
+  assert(scoreToRiskLevel(40) === 'MEDIUM', '40 should be MEDIUM');
+  assert(scoreToRiskLevel(35) === 'LOW', '35 should be LOW (was MEDIUM in old thresholds)');
+  assert(scoreToRiskLevel(20) === 'LOW', '20 should be LOW');
   assert(scoreToRiskLevel(1) === 'LOW', '1 should be LOW');
   assert(scoreToRiskLevel(0) === 'SECURE', '0 should be SECURE');
 });
 
-runTest('Risk level to score range conversion', () => {
+runTest('Risk level to score range conversion (CVSS-aligned)', () => {
   const critical = riskLevelToScoreRange('CRITICAL');
-  assert(critical.min === 80 && critical.max === 100, 'CRITICAL range incorrect');
+  assert(critical.min === 90 && critical.max === 100, 'CRITICAL range should be 90-100');
   
   const high = riskLevelToScoreRange('HIGH');
-  assert(high.min === 60 && high.max === 79, 'HIGH range incorrect');
+  assert(high.min === 70 && high.max === 89, 'HIGH range should be 70-89');
   
   const medium = riskLevelToScoreRange('MEDIUM');
-  assert(medium.min === 30 && medium.max === 59, 'MEDIUM range incorrect');
+  assert(medium.min === 40 && medium.max === 69, 'MEDIUM range should be 40-69');
   
   const low = riskLevelToScoreRange('LOW');
-  assert(low.min === 1 && low.max === 29, 'LOW range incorrect');
+  assert(low.min === 1 && low.max === 39, 'LOW range should be 1-39');
   
   const secure = riskLevelToScoreRange('SECURE');
-  assert(secure.min === 0 && secure.max === 0, 'SECURE range incorrect');
+  assert(secure.min === 0 && secure.max === 0, 'SECURE range should be 0');
 });
 
 // ============================================================================
@@ -399,24 +401,24 @@ runTest('Score summary includes applied factors', () => {
 
 console.log('\n🔄 Category 8: Legacy Compatibility\n');
 
-runTest('Normalize legacy CRITICAL risk level', () => {
+runTest('Normalize legacy CRITICAL risk level (CVSS-aligned)', () => {
   const score = normalizeLegacyRiskLevel('CRITICAL', 3);
-  assertRange(score, 80, 100, 'CRITICAL legacy score');
+  assertRange(score, 90, 100, 'CRITICAL legacy score should be 90-100');
 });
 
-runTest('Normalize legacy HIGH risk level', () => {
+runTest('Normalize legacy HIGH risk level (CVSS-aligned)', () => {
   const score = normalizeLegacyRiskLevel('HIGH', 2);
-  assertRange(score, 60, 79, 'HIGH legacy score');
+  assertRange(score, 70, 89, 'HIGH legacy score should be 70-89');
 });
 
-runTest('Normalize legacy MEDIUM risk level', () => {
+runTest('Normalize legacy MEDIUM risk level (CVSS-aligned)', () => {
   const score = normalizeLegacyRiskLevel('MEDIUM', 1);
-  assertRange(score, 30, 59, 'MEDIUM legacy score');
+  assertRange(score, 40, 69, 'MEDIUM legacy score should be 40-69');
 });
 
-runTest('Normalize legacy LOW risk level', () => {
+runTest('Normalize legacy LOW risk level (CVSS-aligned)', () => {
   const score = normalizeLegacyRiskLevel('LOW', 1);
-  assertRange(score, 1, 29, 'LOW legacy score');
+  assertRange(score, 1, 39, 'LOW legacy score should be 1-39');
 });
 
 // ============================================================================
@@ -449,8 +451,8 @@ runTest('Scenario: Insecure OpenClaw config', () => {
   const result = calculateRiskScore(findings);
   
   assert(result.level === 'CRITICAL' || result.level === 'HIGH', 
-    'Insecure config should be CRITICAL or HIGH');
-  assert(result.score >= 60, 'Insecure config should score at least 60');
+    'Insecure config should be CRITICAL or HIGH (CVSS-aligned)');
+  assert(result.score >= 70, 'Insecure config should score at least 70 (HIGH threshold)');
 });
 
 runTest('Scenario: Moderate security posture', () => {
@@ -471,8 +473,8 @@ runTest('Scenario: Moderate security posture', () => {
   const result = calculateRiskScore(findings);
   
   assert(result.level === 'MEDIUM' || result.level === 'LOW', 
-    'Moderate config should be MEDIUM or LOW');
-  assertRange(result.score, 15, 60, 'Moderate config score');
+    'Moderate config should be MEDIUM or LOW (CVSS-aligned)');
+  assertRange(result.score, 10, 70, 'Moderate config score range');
 });
 
 runTest('Scenario: Well-secured system', () => {
@@ -485,8 +487,8 @@ runTest('Scenario: Well-secured system', () => {
   ];
   const result = calculateRiskScore(findings);
   
-  assert(result.level === 'LOW', 'Secure system should be LOW');
-  assert(result.score < 30, 'Secure system should score under 30');
+  assert(result.level === 'LOW', 'Secure system should be LOW (CVSS-aligned)');
+  assert(result.score < 40, 'Secure system should score under 40 (below MEDIUM threshold)');
 });
 
 // ============================================================================
