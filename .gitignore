@@ -43,3 +43,5 @@ private-keys/
 # Test
 coverage/
 .nyc_output/
+testwallets.md
+/root/.openclaw/testwallets.md
