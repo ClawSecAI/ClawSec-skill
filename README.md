@@ -47,7 +47,115 @@ Client (OpenClaw)           Server (ClawSec)                     Blockchain
 
 ## 🚀 Quick Start
 
-Coming soon! Repository under active development for USDC Hackathon.
+### Server URL
+
+```
+https://clawsec-skill-production.up.railway.app
+```
+
+**Status**: ✅ LIVE and operational
+
+### Installation
+
+```bash
+# Clone repository
+git clone https://github.com/ClawSecAI/ClawSec-skill.git
+cd ClawSec-skill
+
+# Install dependencies
+npm install
+
+# Configure client (optional - defaults work)
+cp client/config.json client/config.local.json
+# Edit config.local.json if needed
+```
+
+### Configuration
+
+Client configuration is stored in `client/config.json`:
+
+```json
+{
+  "server": {
+    "url": "https://clawsec-skill-production.up.railway.app",
+    "timeout": {
+      "connection": 30000,
+      "request": 60000
+    },
+    "retry": {
+      "enabled": true,
+      "maxAttempts": 3,
+      "backoffMultiplier": 2,
+      "initialDelay": 1000
+    }
+  }
+}
+```
+
+**Configuration Options**:
+
+- **`server.url`**: ClawSec API server endpoint
+- **`timeout.connection`**: Connection timeout in milliseconds (default: 30s)
+- **`timeout.request`**: Request timeout in milliseconds (default: 60s)
+- **`retry.enabled`**: Enable automatic retries on network errors
+- **`retry.maxAttempts`**: Maximum retry attempts (default: 3)
+- **`retry.backoffMultiplier`**: Exponential backoff multiplier (default: 2)
+- **`retry.initialDelay`**: Initial delay before first retry in ms (default: 1000)
+
+### Running a Scan
+
+```javascript
+const https = require('https');
+
+const scanData = {
+  gateway: {
+    token: process.env.GATEWAY_TOKEN,
+    bind: '127.0.0.1',
+    port: 2024
+  },
+  channels: {
+    telegram: {
+      bot_token: process.env.TELEGRAM_BOT_TOKEN
+    }
+  }
+};
+
+const options = {
+  hostname: 'clawsec-skill-production.up.railway.app',
+  port: 443,
+  path: '/api/v1/scan',
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Content-Length': JSON.stringify(scanData).length
+  }
+};
+
+const req = https.request(options, (res) => {
+  let data = '';
+  res.on('data', (chunk) => { data += chunk; });
+  res.on('end', () => {
+    const result = JSON.parse(data);
+    console.log('Scan ID:', result.scan_id);
+    console.log('Risk Level:', result.risk_level);
+    console.log('\n' + result.report);
+  });
+});
+
+req.write(JSON.stringify(scanData));
+req.end();
+```
+
+### Testing Integration
+
+```bash
+# Run comprehensive integration tests
+cd client
+node test-integration.js
+
+# View test results
+cat test-results.json
+```
 
 **Deadline**: Sunday Feb 8, 2026 at 20:00 UTC
 
@@ -102,6 +210,132 @@ Coming soon! Repository under active development for USDC Hackathon.
 **Prize**: $30,000 USDC  
 **Deadline**: Sunday Feb 8, 2026 at 20:00 UTC  
 **Submission**: [Moltbook m/usdc](https://www.moltbook.com/m/usdc)
+
+## 🔧 Troubleshooting
+
+### Connection Issues
+
+**Problem**: `ECONNREFUSED` or connection timeout
+
+**Solutions**:
+1. Verify server is up: `curl https://clawsec-skill-production.up.railway.app/health`
+2. Check your internet connection
+3. Ensure no firewall blocking HTTPS (port 443)
+4. Try increasing timeout in `client/config.json`:
+   ```json
+   "timeout": {
+     "connection": 60000,
+     "request": 120000
+   }
+   ```
+
+### Request Timeout
+
+**Problem**: Request times out during scan
+
+**Solutions**:
+1. Reduce configuration size (remove unnecessary fields)
+2. Increase request timeout: `"request": 120000` (2 minutes)
+3. Check server health endpoint for degraded performance
+4. Retry the request (client retries automatically)
+
+### Invalid Input Error
+
+**Problem**: `400 Bad Request - Invalid scan input`
+
+**Solutions**:
+1. Ensure scan data is a JSON object (not array or string)
+2. Check for malformed JSON syntax
+3. Verify required fields are present
+4. Example valid input:
+   ```json
+   {
+     "gateway": { "token": "..." },
+     "channels": {},
+     "tools": {}
+   }
+   ```
+
+### Payment Required (402)
+
+**Problem**: `402 Payment Required`
+
+**Solutions**:
+1. Payment currently disabled in demo mode (shouldn't see this)
+2. If enabled: Include `X-PAYMENT` header with X402 payment proof
+3. Contact support if payment issues persist
+
+### Server Error (500)
+
+**Problem**: `500 Internal Server Error`
+
+**Solutions**:
+1. Check server logs (if you have access)
+2. Verify input data doesn't trigger parsing errors
+3. Retry the request (may be transient)
+4. Report persistent errors to GitHub issues
+
+### Rate Limiting (429)
+
+**Problem**: `429 Too Many Requests`
+
+**Solutions**:
+1. Wait 60 seconds before retrying
+2. Reduce scan frequency
+3. Contact support for rate limit increase if needed
+
+### SSL/TLS Errors
+
+**Problem**: Certificate verification errors
+
+**Solutions**:
+1. Update Node.js to latest LTS version
+2. Ensure system CA certificates are up to date:
+   ```bash
+   # Ubuntu/Debian
+   sudo apt-get update && sudo apt-get install ca-certificates
+   
+   # macOS
+   brew install ca-certificates
+   ```
+3. For self-signed certificates (dev only):
+   ```javascript
+   process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'; // NOT for production!
+   ```
+
+### Retry Logic Not Working
+
+**Problem**: Client doesn't retry on network errors
+
+**Solutions**:
+1. Verify retry is enabled in config:
+   ```json
+   "retry": {
+     "enabled": true,
+     "maxAttempts": 3
+   }
+   ```
+2. Check error type (some errors aren't retriable)
+3. Increase `maxAttempts` if needed
+
+### Report Format Issues
+
+**Problem**: Report missing sections or malformed
+
+**Solutions**:
+1. Update to latest client version
+2. Verify server version: `curl https://clawsec-skill-production.up.railway.app/api/v1`
+3. Check response status is 200 (not 500)
+4. Save raw response for debugging:
+   ```javascript
+   console.log(JSON.stringify(response, null, 2));
+   ```
+
+### Need Help?
+
+- 📖 Check [API Documentation](docs/api-reference.md)
+- 🐛 Report issues: [GitHub Issues](https://github.com/ClawSecAI/ClawSec-skill/issues)
+- 💬 Ask questions: [Moltbook @ClawSecAI](https://moltbook.com/u/ClawSecAI)
 
 ## 📄 License
 

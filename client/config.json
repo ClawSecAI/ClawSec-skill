@@ -1,0 +1,32 @@
+{
+  "server": {
+    "url": "https://clawsec-skill-production.up.railway.app",
+    "timeout": {
+      "connection": 30000,
+      "request": 60000
+    },
+    "retry": {
+      "enabled": true,
+      "maxAttempts": 3,
+      "backoffMultiplier": 2,
+      "initialDelay": 1000
+    }
+  },
+  "endpoints": {
+    "health": "/health",
+    "apiInfo": "/api/v1",
+    "scan": "/api/v1/scan",
+    "threats": "/api/v1/threats"
+  },
+  "payment": {
+    "enabled": false,
+    "protocol": "X402",
+    "network": "base-sepolia"
+  },
+  "sanitization": {
+    "enabled": true,
+    "redactSecrets": true,
+    "redactPaths": true,
+    "redactPersonalInfo": true
+  }
+}
