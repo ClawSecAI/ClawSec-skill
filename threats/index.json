@@ -1,0 +1,50 @@
+{
+  "version": "0.1.0-hackathon",
+  "generated": "2026-02-06T01:36:00Z",
+  "threat_count": 5,
+  "categories": {
+    "core": {
+      "file": "threats/core.md",
+      "size_kb": 8,
+      "threat_count": 5,
+      "threats": [
+        {
+          "id": "T001",
+          "name": "Default or Weak Gateway Token",
+          "severity": "CRITICAL",
+          "category": "gateway",
+          "tags": ["authentication", "token", "credentials"]
+        },
+        {
+          "id": "T002",
+          "name": "Public Gateway Exposure",
+          "severity": "HIGH",
+          "category": "gateway",
+          "tags": ["network", "firewall", "exposure"]
+        },
+        {
+          "id": "T003",
+          "name": "Tool Policy Bypass via Prompt Injection",
+          "severity": "HIGH",
+          "category": "tools",
+          "tags": ["prompt-injection", "tool-abuse", "llm-security"]
+        },
+        {
+          "id": "T004",
+          "name": "Unencrypted Session Storage",
+          "severity": "MEDIUM",
+          "category": "data-protection",
+          "tags": ["encryption", "privacy", "gdpr"]
+        },
+        {
+          "id": "T005",
+          "name": "Exposed Secrets in Configuration",
+          "severity": "HIGH",
+          "category": "secrets-management",
+          "tags": ["credentials", "api-keys", "configuration"]
+        }
+      ]
+    }
+  },
+  "note": "Hackathon MVP - Core threats only. Full threat DB coming post-hackathon."
+}

@@ -1,0 +1,45 @@
+# Node
+node_modules/
+npm-debug.log*
+package-lock.json
+yarn.lock
+
+# Environment
+.env
+.env.local
+*.env
+!.env.example
+
+# Logs
+logs/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Build
+dist/
+build/
+*.tgz
+
+# Temp
+tmp/
+temp/
+*.tmp
+
+# Security
+credentials.json
+private-keys/
+*.pem
+*.key
+
+# Test
+coverage/
+.nyc_output/
