@@ -18,7 +18,17 @@
 
 ## 1️⃣ ClawSec Skill (Client-Side)
 
-### 1.1 Core Scanning Engine
+### 1.1 Skill Structure & Documentation
+- **Status:** 🟡 In Progress
+- **Build Guide:** [See Skill Technology - Build Guide card](https://trello.com/c/GN3Qtggu)
+- **File Structure:**
+  ```
+  skills/clawsec/
+  └── SKILL.md    # The only required file (natural language instructions)
+  ```
+- **Key Insight:** No rigid APIs or schemas - just clear English explaining what the skill does
+
+### 1.2 Core Scanning Engine
 - **Status:** 🔴 Not Started
 - **Components:**
   - [ ] Config file scanner (`openclaw.json`, `.env`)
@@ -26,8 +36,9 @@
   - [ ] Workspace file scanner (`memory/`, scripts, custom skills)
   - [ ] Pattern matching engine (tokens, API keys, passwords)
   - [ ] Prompt injection detection
+- **Estimated time:** 2 hours
 
-### 1.2 Sanitization & Privacy Layer
+### 1.3 Sanitization & Privacy Layer
 - **Status:** 🔴 Not Started
 - **Components:**
   - [ ] API key stripping/redaction
@@ -35,22 +46,44 @@
   - [ ] File path anonymization
   - [ ] Sensitive identifier hashing
   - [ ] User review UI/workflow (transparency)
+- **Estimated time:** 1 hour
 
-### 1.3 API Client
+### 1.4 X402 Payment Integration
 - **Status:** 🔴 Not Started
 - **Components:**
-  - [ ] HTTP client to ClawSec server
-  - [ ] X402 payment initiation
-  - [ ] Report download/display
-  - [ ] Error handling & retry logic
+  - [ ] Install `@x402/fetch` package
+  - [ ] X402Client wrapper
+  - [ ] Payment flow on testnet
+  - [ ] Error handling & retries
+- **Estimated time:** 2 hours
 
-### 1.4 Skill Package
+### 1.5 API Client & Integration
 - **Status:** 🔴 Not Started
 - **Components:**
-  - [ ] `SKILL.md` documentation
-  - [ ] Installation script
+  - [ ] Build request payload
+  - [ ] Parse API response
+  - [ ] Format report for user
+  - [ ] Error handling
+- **Estimated time:** 1 hour
+
+### 1.6 Testing & Documentation
+- **Status:** 🔴 Not Started
+- **Components:**
+  - [ ] End-to-end test (scan → pay → report)
+  - [ ] Error case testing
+  - [ ] Usage documentation
+  - [x] `SKILL.md` frontmatter & metadata
+  - [ ] Installation instructions
+- **Estimated time:** 1.5 hours
+
+### 1.7 Skill Package & Publishing
+- **Status:** 🔴 Not Started
+- **Components:**
+  - [ ] Installation location setup
   - [ ] Environment variable setup
   - [ ] ClawHub publishing metadata
+  - [ ] Dependencies documentation
+- **Total estimated time:** 8 hours
 
 ---
 

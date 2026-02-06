@@ -8,9 +8,16 @@
 
 ## Client Side (User OpenClaw Instance)
 
-**ClawSec Skill Installed:**
+**ClawSec Skill Architecture:**
 
-1. **Scan with Filters**
+The skill is implemented as a single `SKILL.md` file with:
+- **YAML Frontmatter:** Name, description, metadata (emoji, required bins/env vars)
+- **Natural Language Instructions:** How the agent should scan, what to look for, how to handle errors
+- **No rigid APIs:** Just clear English instructions for the AI to follow
+
+**Execution Flow:**
+
+1. **Scan with Filters** (via OpenClaw tools)
    - Scan config files (`openclaw.json`, `.env`)
    - Scan session logs (check for credential leaks)
    - Scan workspace files (memory/, scripts, custom skills)
