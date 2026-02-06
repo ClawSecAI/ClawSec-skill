@@ -1,23 +1,23 @@
 # ClawSec Pattern Matching Engine
 
-**Version:** 0.2.0  
-**Last Updated:** 2026-02-06  
+**Version:** 0.3.0  
+**Last Updated:** 2026-02-06 20:55 UTC  
 **Author:** Ubik (@ClawSecAI)
 
 ## Overview
 
-The ClawSec pattern matching engine provides comprehensive credential and secret detection across 50+ credential types. It uses advanced regex patterns with context-aware analysis to minimize false positives while maintaining high detection accuracy.
+The ClawSec pattern matching engine provides comprehensive credential and secret detection across 70+ credential types. It uses advanced regex patterns with context-aware analysis to minimize false positives while maintaining high detection accuracy.
 
 ## Features
 
 ### 🎯 High Detection Accuracy
-- **50+ credential types** supported
+- **70+ credential types** supported
 - **Context-aware analysis** to reduce false positives
 - **Environment variable detection** (safe references not flagged)
 - **Confidence scoring** for each detection
 - **Severity classification** (CRITICAL, HIGH, MEDIUM, LOW)
 
-### 🔍 Supported Credential Types
+### 🔍 Supported Credential Types (v0.3.0)
 
 #### Cloud Provider Credentials
 - AWS Access Keys (AKIA*)
@@ -73,6 +73,48 @@ The ClawSec pattern matching engine provides comprehensive credential and secret
 - Generic Secrets
 - Private Keys
 - Auth Tokens
+
+#### Email & Communication Services (NEW in v0.3.0)
+- SendGrid API Keys
+- Mailgun API Keys
+- Twilio Account SIDs & Auth Tokens
+- Mailchimp API Keys
+
+#### Monitoring & Analytics
+- Datadog API Keys
+- New Relic License Keys
+- Sentry DSN
+
+#### CI/CD & Development Tools
+- CircleCI Tokens
+- Travis CI Tokens
+- Docker Hub Tokens
+- JFrog Artifactory Tokens
+
+#### Social Media & Marketing
+- Twitter API Keys
+- Facebook Access Tokens
+- LinkedIn Access Tokens
+
+#### Additional Payment Services
+- Square Access Tokens
+- Coinbase API Keys
+
+#### Infrastructure & Hosting
+- DigitalOcean API Tokens
+- Heroku API Keys
+- Cloudflare API Keys
+- Firebase Service Accounts
+- PlanetScale Database Tokens
+- Supabase Service Keys
+
+#### Cryptocurrency & Blockchain
+- Ethereum Private Keys
+- Bitcoin Private Keys (WIF)
+
+#### Search & Analytics
+- Algolia API Keys
+- Elastic Cloud IDs
 
 ## Architecture
 
@@ -327,8 +369,8 @@ node test-patterns.js
 
 ## Performance
 
-- **Pattern count**: 50+ credential types
-- **Average scan time**: < 100ms for typical config files
+- **Pattern count**: 70+ credential types (v0.3.0)
+- **Average scan time**: < 150ms for typical config files
 - **Memory usage**: Minimal (regex-based, no heavy dependencies)
 - **False positive rate**: < 5% (with environment variable filtering)
 - **Detection rate**: > 95% for known credential formats
@@ -336,10 +378,13 @@ node test-patterns.js
 ## Future Enhancements
 
 ### Short-term
-- [ ] Add more cloud provider patterns (DigitalOcean, Linode)
-- [ ] Cryptocurrency wallet detection (private keys, seeds)
-- [ ] CI/CD service tokens (CircleCI, Travis, Jenkins)
-- [ ] Monitoring service keys (Datadog, New Relic, Sentry)
+- [x] Add more cloud provider patterns (DigitalOcean) ✅ v0.3.0
+- [x] Cryptocurrency wallet detection (Ethereum, Bitcoin private keys) ✅ v0.3.0
+- [x] CI/CD service tokens (CircleCI, Travis, Docker Hub, JFrog) ✅ v0.3.0
+- [x] Monitoring service keys (Datadog, New Relic, Sentry) ✅ v0.3.0
+- [ ] Add Linode, Vultr cloud provider patterns
+- [ ] Jenkins CI tokens
+- [ ] Cryptocurrency seed phrases (BIP39 mnemonic)
 
 ### Long-term
 - [ ] Machine learning-based pattern detection

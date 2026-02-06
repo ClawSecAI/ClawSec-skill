@@ -2,8 +2,9 @@
  * ClawSec Pattern Matching Engine
  * Enhanced credential and secret detection patterns
  * 
- * @version 0.2.0
+ * @version 0.3.0
  * @author Ubik (@ClawSecAI)
+ * @updated 2026-02-06 - Added 30+ new credential types (70+ total patterns)
  */
 
 /**
@@ -390,6 +391,258 @@ const CREDENTIAL_PATTERNS = [
     confidence: 'medium',
     description: 'X402 payment protocol credentials',
     impact: 'Payment manipulation, wallet access'
+  },
+  
+  // === Additional Cloud & Infrastructure ===
+  
+  {
+    name: 'DigitalOcean API Token',
+    pattern: /\b[0-9a-f]{64}\b/g,
+    severity: 'HIGH',
+    confidence: 'low',
+    description: 'DigitalOcean API token',
+    impact: 'Cloud infrastructure access, resource manipulation'
+  },
+  
+  {
+    name: 'Heroku API Key',
+    pattern: /heroku[_-]?api[_-]?key\s*[:=]\s*['\"]?[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}['\"]?/gi,
+    severity: 'HIGH',
+    confidence: 'high',
+    description: 'Heroku API key',
+    impact: 'Application deployment access, environment variable access'
+  },
+  
+  // === Email & Communication Services ===
+  
+  {
+    name: 'SendGrid API Key',
+    pattern: /SG\.[a-zA-Z0-9_-]{22}\.[a-zA-Z0-9_-]{43}/g,
+    severity: 'HIGH',
+    confidence: 'high',
+    description: 'SendGrid email service API key',
+    impact: 'Email spam, phishing campaigns, reputation damage'
+  },
+  
+  {
+    name: 'Mailgun API Key',
+    pattern: /key-[0-9a-f]{32}|mailgun[_-]?api[_-]?key\s*[:=]\s*['\"]?[0-9a-f]{32}['\"]?/gi,
+    severity: 'HIGH',
+    confidence: 'medium',
+    description: 'Mailgun email API key',
+    impact: 'Email service abuse, spam campaigns'
+  },
+  
+  {
+    name: 'Twilio Account SID & Auth Token',
+    pattern: /AC[0-9a-f]{32}|twilio[_-]?auth[_-]?token\s*[:=]\s*['\"]?[0-9a-f]{32}['\"]?/gi,
+    severity: 'HIGH',
+    confidence: 'high',
+    description: 'Twilio API credentials',
+    impact: 'SMS/Voice service abuse, billing fraud'
+  },
+  
+  {
+    name: 'Mailchimp API Key',
+    pattern: /[0-9a-f]{32}-us[0-9]{1,2}/g,
+    severity: 'MEDIUM',
+    confidence: 'medium',
+    description: 'Mailchimp API key',
+    impact: 'Email list access, campaign manipulation'
+  },
+  
+  // === Monitoring & Analytics ===
+  
+  {
+    name: 'Datadog API Key',
+    pattern: /datadog[_-]?api[_-]?key\s*[:=]\s*['\"]?[0-9a-f]{32}['\"]?/gi,
+    severity: 'MEDIUM',
+    confidence: 'medium',
+    description: 'Datadog monitoring API key',
+    impact: 'Metrics manipulation, log access'
+  },
+  
+  {
+    name: 'New Relic License Key',
+    pattern: /[a-f0-9]{40}|newrelic[_-]?license[_-]?key\s*[:=]\s*['\"]?[a-f0-9]{40}['\"]?/gi,
+    severity: 'MEDIUM',
+    confidence: 'low',
+    description: 'New Relic APM license key',
+    impact: 'Performance data access, billing abuse'
+  },
+  
+  {
+    name: 'Sentry DSN',
+    pattern: /https:\/\/[0-9a-f]{32}@[a-z0-9\-]+\.ingest\.sentry\.io\/[0-9]+/gi,
+    severity: 'MEDIUM',
+    confidence: 'high',
+    description: 'Sentry error tracking DSN',
+    impact: 'Error data access, privacy breach'
+  },
+  
+  // === CI/CD & Development Tools ===
+  
+  {
+    name: 'CircleCI Token',
+    pattern: /circleci[_-]?token\s*[:=]\s*['\"]?[a-f0-9]{40}['\"]?/gi,
+    severity: 'HIGH',
+    confidence: 'medium',
+    description: 'CircleCI API token',
+    impact: 'Build pipeline access, supply chain attack'
+  },
+  
+  {
+    name: 'Travis CI Token',
+    pattern: /travis[_-]?token\s*[:=]\s*['\"]?[a-zA-Z0-9_-]{22}['\"]?/gi,
+    severity: 'HIGH',
+    confidence: 'medium',
+    description: 'Travis CI access token',
+    impact: 'Build system access, code execution'
+  },
+  
+  {
+    name: 'Docker Hub Token',
+    pattern: /docker[_-]?(?:hub|token)\s*[:=]\s*['\"]?[a-f0-9-]{36}['\"]?/gi,
+    severity: 'HIGH',
+    confidence: 'medium',
+    description: 'Docker Hub authentication token',
+    impact: 'Container image manipulation, supply chain attack'
+  },
+  
+  {
+    name: 'JFrog Artifactory Token',
+    pattern: /AKC[a-zA-Z0-9]{10,}/g,
+    severity: 'HIGH',
+    confidence: 'high',
+    description: 'JFrog Artifactory API token',
+    impact: 'Artifact repository access, supply chain attack'
+  },
+  
+  // === Social Media & Marketing ===
+  
+  {
+    name: 'Twitter API Key',
+    pattern: /twitter[_-]?api[_-]?key\s*[:=]\s*['\"]?[0-9a-zA-Z]{25}['\"]?|twitter[_-]?api[_-]?secret\s*[:=]\s*['\"]?[0-9a-zA-Z]{50}['\"]?/gi,
+    severity: 'MEDIUM',
+    confidence: 'medium',
+    description: 'Twitter API credentials',
+    impact: 'Account access, automated posting abuse'
+  },
+  
+  {
+    name: 'Facebook Access Token',
+    pattern: /EAA[0-9A-Za-z]+/g,
+    severity: 'MEDIUM',
+    confidence: 'medium',
+    description: 'Facebook Graph API access token',
+    impact: 'Social media account access, data harvesting'
+  },
+  
+  {
+    name: 'LinkedIn Access Token',
+    pattern: /linkedin[_-]?access[_-]?token\s*[:=]\s*['\"]?[a-zA-Z0-9\-_]{60,}['\"]?/gi,
+    severity: 'MEDIUM',
+    confidence: 'medium',
+    description: 'LinkedIn API access token',
+    impact: 'Professional network access, data scraping'
+  },
+  
+  // === Additional Payment Services ===
+  
+  {
+    name: 'Square Access Token',
+    pattern: /sq0atp-[0-9A-Za-z\-_]{22}|sq0csp-[0-9A-Za-z\-_]{43}/g,
+    severity: 'CRITICAL',
+    confidence: 'high',
+    description: 'Square payment API token',
+    impact: 'Payment processing access, financial fraud'
+  },
+  
+  {
+    name: 'Coinbase API Key',
+    pattern: /coinbase[_-]?api[_-]?(?:key|secret)\s*[:=]\s*['\"]?[a-zA-Z0-9]{32}['\"]?/gi,
+    severity: 'CRITICAL',
+    confidence: 'medium',
+    description: 'Coinbase cryptocurrency API credentials',
+    impact: 'Cryptocurrency wallet access, financial theft'
+  },
+  
+  // === Infrastructure & Hosting ===
+  
+  {
+    name: 'Cloudflare API Key',
+    pattern: /cloudflare[_-]?api[_-]?key\s*[:=]\s*['\"]?[a-f0-9]{37}['\"]?/gi,
+    severity: 'HIGH',
+    confidence: 'medium',
+    description: 'Cloudflare API key',
+    impact: 'DNS manipulation, CDN configuration access'
+  },
+  
+  {
+    name: 'Firebase Service Account',
+    pattern: /firebase[_-]?(?:service|admin)[_-]?(?:account|key)\s*[:=]\s*['\"]?[\w\W]*?private_key[\w\W]*?['\"]?/gi,
+    severity: 'CRITICAL',
+    confidence: 'medium',
+    description: 'Firebase service account credentials',
+    impact: 'Database access, authentication bypass'
+  },
+  
+  {
+    name: 'PlanetScale Database Token',
+    pattern: /pscale_tkn_[a-zA-Z0-9_\-\.]{32,}/g,
+    severity: 'CRITICAL',
+    confidence: 'high',
+    description: 'PlanetScale database access token',
+    impact: 'Database access, data breach'
+  },
+  
+  {
+    name: 'Supabase Service Key',
+    pattern: /eyJ[a-zA-Z0-9_-]*\.eyJ[a-zA-Z0-9_-]*\.[a-zA-Z0-9_-]*service_role[a-zA-Z0-9_-]*/g,
+    severity: 'CRITICAL',
+    confidence: 'high',
+    description: 'Supabase service role key',
+    impact: 'Backend database bypass, data breach'
+  },
+  
+  // === Cryptocurrency & Blockchain ===
+  
+  {
+    name: 'Ethereum Private Key',
+    pattern: /0x[a-fA-F0-9]{64}/g,
+    severity: 'CRITICAL',
+    confidence: 'medium',
+    description: 'Ethereum wallet private key',
+    impact: 'Cryptocurrency theft, wallet compromise'
+  },
+  
+  {
+    name: 'Bitcoin Private Key (WIF)',
+    pattern: /[5KL][1-9A-HJ-NP-Za-km-z]{50,51}/g,
+    severity: 'CRITICAL',
+    confidence: 'medium',
+    description: 'Bitcoin wallet private key (WIF format)',
+    impact: 'Bitcoin theft, wallet compromise'
+  },
+  
+  // === Search & Analytics ===
+  
+  {
+    name: 'Algolia API Key',
+    pattern: /algolia[_-]?(?:api|admin)[_-]?key\s*[:=]\s*['\"]?[a-f0-9]{32}['\"]?/gi,
+    severity: 'MEDIUM',
+    confidence: 'medium',
+    description: 'Algolia search API key',
+    impact: 'Search index manipulation, data access'
+  },
+  
+  {
+    name: 'Elastic Cloud ID',
+    pattern: /cloud[_-]?id\s*[:=]\s*['\"]?[a-zA-Z0-9\-_:]+['\"]?/gi,
+    severity: 'MEDIUM',
+    confidence: 'low',
+    description: 'Elastic Cloud deployment ID',
+    impact: 'Search cluster access, data exfiltration'
   }
 ];
 

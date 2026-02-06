@@ -346,7 +346,7 @@ test('Credential risk calculation - LOW', () => {
 
 // Test 16: Pattern Coverage
 test('Pattern definition completeness', () => {
-  assert(CREDENTIAL_PATTERNS.length >= 45, `Should have at least 45 patterns, found ${CREDENTIAL_PATTERNS.length}`);
+  assert(CREDENTIAL_PATTERNS.length >= 70, `Should have at least 70 patterns, found ${CREDENTIAL_PATTERNS.length}`);
   
   // Verify all patterns have required fields
   CREDENTIAL_PATTERNS.forEach(pattern => {
@@ -401,6 +401,125 @@ test('Hugging Face token detection', () => {
   const secrets = findExposedSecrets(config);
   assert(secrets.length > 0, 'Should detect Hugging Face token');
   assert(secrets.some(s => s.type === 'Hugging Face Token'), 'Should identify as HF token');
+});
+
+// Test 21: SendGrid API Key
+test('SendGrid API key detection', () => {
+  const config = {
+    sendgrid_key: 'SG.abcdefghijklmnopqrstuv.ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnop'
+  };
+  
+  const secrets = findExposedSecrets(config);
+  assert(secrets.length > 0, 'Should detect SendGrid key');
+  assert(secrets.some(s => s.type === 'SendGrid API Key'), 'Should identify as SendGrid key');
+  assert(secrets[0].severity === 'HIGH', 'SendGrid keys should be HIGH');
+});
+
+// Test 22: Twilio Credentials
+test('Twilio Account SID detection', () => {
+  const config = {
+    twilio_sid: 'AC0123456789abcdef0123456789abcdef'
+  };
+  
+  const secrets = findExposedSecrets(config);
+  assert(secrets.length > 0, 'Should detect Twilio Account SID');
+  assert(secrets.some(s => s.type === 'Twilio Account SID & Auth Token'), 'Should identify as Twilio credentials');
+  assert(secrets[0].severity === 'HIGH', 'Twilio credentials should be HIGH');
+});
+
+// Test 23: Square Payment Token
+test('Square access token detection', () => {
+  const config = {
+    square_token: 'sq0atp-1234567890abcdefghijkl'
+  };
+  
+  const secrets = findExposedSecrets(config);
+  assert(secrets.length > 0, 'Should detect Square token');
+  assert(secrets.some(s => s.type === 'Square Access Token'), 'Should identify as Square token');
+  assert(secrets[0].severity === 'CRITICAL', 'Square tokens should be CRITICAL');
+});
+
+// Test 24: PlanetScale Database Token
+test('PlanetScale database token detection', () => {
+  const config = {
+    db_token: 'pscale_tkn_1234567890abcdefghijklmnopqrstuv'
+  };
+  
+  const secrets = findExposedSecrets(config);
+  assert(secrets.length > 0, 'Should detect PlanetScale token');
+  assert(secrets.some(s => s.type === 'PlanetScale Database Token'), 'Should identify as PlanetScale token');
+  assert(secrets[0].severity === 'CRITICAL', 'PlanetScale tokens should be CRITICAL');
+});
+
+// Test 25: Ethereum Private Key
+test('Ethereum private key detection', () => {
+  const config = {
+    eth_key: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef'
+  };
+  
+  const secrets = findExposedSecrets(config);
+  assert(secrets.length > 0, 'Should detect Ethereum private key');
+  assert(secrets.some(s => s.type === 'Ethereum Private Key'), 'Should identify as Ethereum key');
+  assert(secrets[0].severity === 'CRITICAL', 'Crypto keys should be CRITICAL');
+});
+
+// Test 26: CircleCI Token
+test('CircleCI token detection', () => {
+  const config = {
+    circleci_token: '1234567890abcdef1234567890abcdef12345678'
+  };
+  
+  const secrets = findExposedSecrets(config);
+  assert(secrets.length > 0, 'Should detect CircleCI token');
+  assert(secrets.some(s => s.type === 'CircleCI Token'), 'Should identify as CircleCI token');
+  assert(secrets[0].severity === 'HIGH', 'CI/CD tokens should be HIGH');
+});
+
+// Test 27: JFrog Artifactory Token
+test('JFrog Artifactory token detection', () => {
+  const config = {
+    artifactory_token: 'AKC1234567890a'
+  };
+  
+  const secrets = findExposedSecrets(config);
+  assert(secrets.length > 0, 'Should detect JFrog token');
+  assert(secrets.some(s => s.type === 'JFrog Artifactory Token'), 'Should identify as JFrog token');
+  assert(secrets[0].severity === 'HIGH', 'Artifactory tokens should be HIGH');
+});
+
+// Test 28: Sentry DSN
+test('Sentry DSN detection', () => {
+  const config = {
+    sentry_dsn: 'https://1234567890abcdef1234567890abcdef@o123456.ingest.sentry.io/1234567'
+  };
+  
+  const secrets = findExposedSecrets(config);
+  assert(secrets.length > 0, 'Should detect Sentry DSN');
+  assert(secrets.some(s => s.type === 'Sentry DSN'), 'Should identify as Sentry DSN');
+  assert(secrets[0].severity === 'MEDIUM', 'Sentry DSN should be MEDIUM');
+});
+
+// Test 29: Facebook Access Token
+test('Facebook access token detection', () => {
+  const config = {
+    fb_token: 'EAAaBcDeFgHiJkLmNoPqRsTuVwXyZ1234567890'
+  };
+  
+  const secrets = findExposedSecrets(config);
+  assert(secrets.length > 0, 'Should detect Facebook token');
+  assert(secrets.some(s => s.type === 'Facebook Access Token'), 'Should identify as Facebook token');
+});
+
+// Test 30: Heroku API Key
+test('Heroku API key detection', () => {
+  const config = {
+    heroku_api_key: '12345678-1234-1234-1234-123456789abc'
+  };
+  
+  const secrets = findExposedSecrets(config);
+  assert(secrets.length > 0, 'Should detect Heroku API key');
+  assert(secrets.some(s => s.type === 'Heroku API Key'), 'Should identify as Heroku key');
+  assert(secrets[0].severity === 'HIGH', 'Heroku keys should be HIGH');
 });
 
 // === Run Tests ===
