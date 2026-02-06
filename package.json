@@ -11,7 +11,8 @@
     "dev": "nodemon server/index.js",
     "test": "jest",
     "test:integration": "jest tests/integration",
-    "test:e2e": "jest tests/e2e"
+    "test:e2e": "jest tests/e2e",
+    "test:monitoring": "node test-monitoring.js"
   },
   "keywords": [
     "openclaw",
@@ -37,7 +38,14 @@
     "dotenv": "^16.4.5",
     "cors": "^2.8.5",
     "ajv": "^8.12.0",
-    "ajv-formats": "^3.0.1"
+    "ajv-formats": "^3.0.1",
+    "@x402/express": "^0.7.3",
+    "@x402/evm": "^0.7.3",
+    "@x402/core": "^0.7.3"
+  },
+  "optionalDependencies": {
+    "@sentry/node": "^7.100.0",
+    "@sentry/profiling-node": "^1.3.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.0",

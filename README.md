@@ -106,6 +106,10 @@ Client configuration is stored in `client/config.json`:
 
 ### Running a Scan
 
+**Option 1: Free Demo Mode (No Payment)**
+
+The server currently runs in demo mode - no payment required for testing.
+
 ```javascript
 const https = require('https');
 
@@ -147,6 +151,30 @@ const req = https.request(options, (res) => {
 req.write(JSON.stringify(scanData));
 req.end();
 ```
+
+**Option 2: X402 Payment (USDC on Base)**
+
+When payment is enabled, use the X402 client:
+
+```bash
+npm install @x402/fetch @x402/evm @x402/core
+```
+
+```javascript
+const { scanWithPayment } = require('./client/x402-client');
+
+const config = {
+  apiUrl: 'https://clawsec-skill-production.up.railway.app',
+  privateKey: process.env.WALLET_PRIVATE_KEY,
+  network: 'eip155:84532', // Base Sepolia testnet
+  rpcUrl: 'https://sepolia.base.org'
+};
+
+const report = await scanWithPayment(config, scanData);
+console.log('Scan report:', report);
+```
+
+**See [X402 Integration Guide](docs/x402-integration.md) for complete payment setup.**
 
 ### Testing Integration
 
@@ -338,6 +366,80 @@ cat test-results.json
 - 📖 Check [API Documentation](docs/api-reference.md)
 - 🐛 Report issues: [GitHub Issues](https://github.com/ClawSecAI/ClawSec-skill/issues)
 - 💬 Ask questions: [Moltbook @ClawSecAI](https://moltbook.com/u/ClawSecAI)
+
+## 📊 Production Monitoring
+
+ClawSec production deployment includes comprehensive monitoring:
+
+### Health Check Endpoint
+
+```bash
+curl https://clawsec-skill-production.up.railway.app/health
+```
+
+Returns system status, uptime, memory usage, and dependency health.
+
+### Monitoring Stack
+
+- **Railway Dashboard** - CPU, memory, network, logs (built-in)
+- **Sentry** - Error tracking and performance monitoring (optional)
+- **Better Uptime** - External uptime monitoring with alerting (optional)
+- **Structured Logging** - JSON logs for easy parsing and analysis
+
+### Setup Monitoring (Recommended for Production)
+
+**Step 1: Configure Sentry (Error Tracking)**
+
+1. Sign up at [sentry.io](https://sentry.io) (free tier: 5K errors/month)
+2. Create a Node.js project
+3. Copy your DSN
+4. Add to Railway environment variables:
+   ```
+   SENTRY_DSN=https://[key]@sentry.io/[project-id]
+   ```
+5. Install dependencies: `npm install @sentry/node @sentry/profiling-node`
+6. Redeploy service
+
+**Step 2: Configure Uptime Monitoring**
+
+1. Sign up at [betteruptime.com](https://betteruptime.com) or [uptimerobot.com](https://uptimerobot.com)
+2. Create HTTP(S) monitor:
+   - URL: `https://clawsec-skill-production.up.railway.app/health`
+   - Check frequency: Every 1 minute
+   - Expected status: 200
+   - Response contains: `"status":"healthy"`
+3. Set up email/SMS alerts for downtime
+
+**Step 3: Configure Railway Dashboard**
+
+1. Navigate to Railway project → **Observability** tab
+2. Click "Start with a simple dashboard"
+3. Add custom widgets:
+   - CPU Usage (alert at 80%)
+   - Memory Usage (alert at 450 MB)
+   - Error Logs (filter: `@level:error`)
+   - Response Time (filter: `"response_time_ms"`)
+
+**Complete Setup Guide:** [docs/monitoring-setup.md](docs/monitoring-setup.md)
+
+### Key Metrics
+
+| Metric | Target | Alert Threshold |
+|--------|--------|-----------------|
+| Uptime | 99.9% | < 99% weekly |
+| Response Time (P95) | < 2s | > 8s |
+| Error Rate | < 1% | > 5% |
+| Memory Usage | < 200 MB | > 450 MB |
+| CPU Usage | < 30% | > 80% for 5 min |
+
+### Monitoring Features
+
+✅ **Enhanced Health Endpoint** - System metrics, dependency status  
+✅ **Structured JSON Logging** - Request ID tracking, performance metrics  
+✅ **Sentry Integration** - Error tracking, performance monitoring  
+✅ **Railway Observability** - Built-in metrics dashboard and alerts  
+✅ **Slow Request Detection** - Automatic alerts for requests > 10s  
+✅ **Business Metrics** - Scan volume, risk levels, finding counts
 
 ## 📄 License
 

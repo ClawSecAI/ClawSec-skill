@@ -7,6 +7,43 @@
  */
 
 require('dotenv').config();
+
+// X402 Payment Integration
+const { paymentMiddleware } = require('@x402/express');
+const { 
+  initializePaymentServer, 
+  getPaymentConfig,
+  paymentTracker,
+  PRICING
+} = require('./payment');
+
+// Sentry Error Tracking (Optional - requires SENTRY_DSN env var)
+let Sentry;
+if (process.env.SENTRY_DSN) {
+  try {
+    Sentry = require('@sentry/node');
+    const { nodeProfilingIntegration } = require('@sentry/profiling-node');
+    
+    Sentry.init({
+      dsn: process.env.SENTRY_DSN,
+      environment: process.env.NODE_ENV || 'development',
+      release: process.env.RAILWAY_GIT_COMMIT_SHA || 'dev',
+      integrations: [
+        nodeProfilingIntegration(),
+      ],
+      tracesSampleRate: 0.1, // Sample 10% of transactions for performance monitoring
+      profilesSampleRate: 0.1,
+    });
+    
+    console.log('✅ Sentry error tracking enabled');
+  } catch (error) {
+    console.warn('⚠️  Sentry SDK not installed. Run: npm install @sentry/node @sentry/profiling-node');
+    Sentry = null;
+  }
+} else {
+  console.log('ℹ️  Sentry disabled (set SENTRY_DSN to enable error tracking)');
+}
+
 const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
@@ -21,33 +58,162 @@ const { generateExecutiveSummary, formatExecutiveSummaryMarkdown } = require('./
 const app = express();
 const PORT = process.env.PORT || 4021;
 
+// Initialize X402 payment server (if enabled)
+let paymentServer = null;
+let paymentConfig = null;
+let payTo = null;
+let network = null;
+
+if (process.env.ENABLE_PAYMENT === 'true') {
+  try {
+    const paymentInit = initializePaymentServer();
+    paymentServer = paymentInit.server;
+    payTo = paymentInit.payTo;
+    network = paymentInit.network;
+    paymentConfig = getPaymentConfig(payTo, network);
+    console.log('✅ X402 payment enabled');
+  } catch (error) {
+    console.error('❌ Failed to initialize X402 payment:', error.message);
+    console.log('   Continuing in demo mode (payments disabled)');
+  }
+} else {
+  console.log('ℹ️  X402 payment disabled (demo mode)');
+}
+
+// Sentry request handler (must be first middleware)
+if (Sentry) {
+  app.use(Sentry.Handlers.requestHandler());
+  app.use(Sentry.Handlers.tracingHandler());
+}
+
 // Middleware
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
-// Request logging
+// Enhanced request logging with performance metrics
 app.use((req, res, next) => {
   const start = Date.now();
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
+  const requestId = `req-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+  
+  // Attach request ID to request object
+  req.requestId = requestId;
+  
+  // Log request start
+  console.log(JSON.stringify({
+    timestamp: new Date().toISOString(),
+    level: 'info',
+    type: 'request_start',
+    request_id: requestId,
+    method: req.method,
+    path: req.path,
+    client_ip: req.ip || req.connection.remoteAddress,
+    user_agent: req.get('user-agent')
+  }));
   
   res.on('finish', () => {
     const duration = Date.now() - start;
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.path} - ${res.statusCode} (${duration}ms)`);
+    const logLevel = res.statusCode >= 500 ? 'error' : res.statusCode >= 400 ? 'warn' : 'info';
+    
+    // Structured log for Railway/Sentry parsing
+    console.log(JSON.stringify({
+      timestamp: new Date().toISOString(),
+      level: logLevel,
+      type: 'request_complete',
+      request_id: requestId,
+      method: req.method,
+      path: req.path,
+      status_code: res.statusCode,
+      response_time_ms: duration,
+      client_ip: req.ip || req.connection.remoteAddress,
+      user_agent: req.get('user-agent'),
+      // Add business metrics if available
+      ...(req.scanMetrics || {})
+    }));
+    
+    // Log slow requests to Sentry
+    if (Sentry && duration > 10000) { // > 10 seconds
+      Sentry.captureMessage(`Slow request: ${req.method} ${req.path} (${duration}ms)`, {
+        level: 'warning',
+        tags: {
+          endpoint: req.path,
+          method: req.method
+        },
+        extra: {
+          duration_ms: duration,
+          status_code: res.statusCode
+        }
+      });
+    }
   });
   
   next();
 });
 
-// Health check
+// Health check - Enhanced with system metrics
 app.get('/health', (req, res) => {
-  res.json({
-    status: 'healthy',
+  const memUsage = process.memoryUsage();
+  const totalMem = require('os').totalmem();
+  const freeMem = require('os').freemem();
+  const usedMem = totalMem - freeMem;
+  
+  // Check critical dependencies
+  const dependencies = {
+    filesystem: checkFilesystem(),
+    anthropic: checkAnthropicKey(),
+    environment: process.env.NODE_ENV || 'development'
+  };
+  
+  // Overall health status
+  const allHealthy = Object.values(dependencies).every(status => 
+    status === 'ok' || status === 'configured' || status === 'development'
+  );
+  
+  const statusCode = allHealthy ? 200 : 503;
+  
+  res.status(statusCode).json({
+    status: allHealthy ? 'healthy' : 'degraded',
     service: 'ClawSec',
     version: '0.1.0-hackathon',
-    uptime: process.uptime(),
-    timestamp: new Date().toISOString()
+    uptime: Math.floor(process.uptime()),
+    timestamp: new Date().toISOString(),
+    system: {
+      memory: {
+        used: Math.round(usedMem / 1024 / 1024),
+        total: Math.round(totalMem / 1024 / 1024),
+        percentage: Math.round((usedMem / totalMem) * 100),
+        heap: {
+          used: Math.round(memUsage.heapUsed / 1024 / 1024),
+          total: Math.round(memUsage.heapTotal / 1024 / 1024)
+        }
+      },
+      cpu: {
+        load: require('os').loadavg().map(l => Math.round(l * 100) / 100)
+      },
+      process: {
+        pid: process.pid,
+        nodeVersion: process.version,
+        platform: process.platform,
+        arch: process.arch
+      }
+    },
+    dependencies
   });
 });
+
+// Helper: Check if threats directory exists
+function checkFilesystem() {
+  try {
+    const threatsPath = path.join(__dirname, '..', 'threats');
+    return fs.existsSync(threatsPath) ? 'ok' : 'missing';
+  } catch (error) {
+    return 'error';
+  }
+}
+
+// Helper: Check if Anthropic API key is configured
+function checkAnthropicKey() {
+  return process.env.ANTHROPIC_API_KEY ? 'configured' : 'not_configured';
+}
 
 // API info
 app.get('/api/v1', (req, res) => {
@@ -81,9 +247,26 @@ app.get('/api/v1/threats', (req, res) => {
   }
 });
 
+// Apply X402 payment middleware (if enabled)
+if (paymentServer && paymentConfig) {
+  app.use(paymentMiddleware(paymentConfig, paymentServer));
+}
+
 // Main scan endpoint
 app.post('/api/v1/scan', async (req, res) => {
+  const scanStartTime = Date.now();
+  
   try {
+    // Check if payment was verified (X402 middleware sets this)
+    const paymentVerified = req.x402?.payment?.verified || false;
+    const paymentData = req.x402?.payment || null;
+    
+    // If payment is enabled but not verified, this should not be reached
+    // (X402 middleware handles 402 response automatically)
+    if (process.env.ENABLE_PAYMENT === 'true' && !paymentVerified) {
+      console.warn('⚠️  Payment enabled but not verified - middleware may be misconfigured');
+    }
+    
     const scanInput = req.body;
     
     // Validate input
@@ -204,11 +387,65 @@ app.post('/api/v1/scan', async (req, res) => {
       }
     }
     
+    // Capture business metrics for logging
+    const scanDuration = Date.now() - scanStartTime;
+    req.scanMetrics = {
+      scan_id: scanId,
+      findings_count: findings.length,
+      risk_level: scoreResult.level,
+      risk_score: scoreResult.score,
+      scan_duration_ms: scanDuration,
+      context_tokens: optimizedContext.stats.contextTokens,
+      payment_verified: paymentVerified
+    };
+    
+    // Record payment if verified
+    if (paymentVerified && paymentData) {
+      paymentTracker.record(scanId, {
+        transactionHash: paymentData.transactionHash,
+        amount: paymentData.amount,
+        from: paymentData.from,
+        to: paymentData.to,
+        network: network
+      });
+    }
+    
+    // Log scan completion with business metrics
+    console.log(JSON.stringify({
+      timestamp: new Date().toISOString(),
+      level: 'info',
+      type: 'scan_complete',
+      request_id: req.requestId,
+      scan_id: scanId,
+      findings_count: findings.length,
+      risk_level: scoreResult.level,
+      risk_score: scoreResult.score,
+      scan_duration_ms: scanDuration,
+      context_tokens: optimizedContext.stats.contextTokens,
+      model: optimizedContext.stats.modelName,
+      payment_verified: paymentVerified
+    }));
+    
     // Return report
     res.json(response);
     
   } catch (error) {
     console.error('Scan error:', error);
+    
+    // Capture exception in Sentry with context
+    if (Sentry) {
+      Sentry.captureException(error, {
+        tags: {
+          endpoint: '/api/v1/scan',
+          error_type: error.name
+        },
+        extra: {
+          request_id: req.requestId,
+          scan_input_keys: Object.keys(req.body || {})
+        }
+      });
+    }
+    
     res.status(500).json({ error: 'Scan failed', message: error.message });
   }
 });
@@ -580,14 +817,43 @@ function capitalize(str) {
   return str.charAt(0).toUpperCase() + str.slice(1).replace(/_/g, ' ');
 }
 
+// Payment status endpoint
+app.get('/api/payment/status/:id', (req, res) => {
+  const scanId = req.params.id;
+  const status = paymentTracker.getStatus(scanId);
+  
+  if (status.status === 'not_found') {
+    return res.status(404).json({
+      error: 'Payment not found',
+      scan_id: scanId
+    });
+  }
+  
+  res.json({
+    scan_id: scanId,
+    payment: status
+  });
+});
+
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({ error: 'Not Found', path: req.path });
 });
 
+// Sentry error handler (must be before other error handlers)
+if (Sentry) {
+  app.use(Sentry.Handlers.errorHandler());
+}
+
 // Error handler
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
+  
+  // Capture error in Sentry if available
+  if (Sentry && process.env.SENTRY_DSN) {
+    Sentry.captureException(err);
+  }
+  
   res.status(500).json({ error: 'Internal Server Error', message: err.message });
 });
 

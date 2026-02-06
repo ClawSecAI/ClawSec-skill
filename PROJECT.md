@@ -171,13 +171,29 @@
   - [ ] Authentication/API keys (planned)
 
 ### 2.2 Payment Integration (X402)
-- **Status:** 🔴 Not Started
+- **Status:** 🟢 Testing (Ready for Testnet Validation)
 - **Components:**
-  - [ ] X402 protocol implementation
-  - [ ] USDC transaction verification
-  - [ ] Payment state tracking
-  - [ ] Escrow/settlement logic
-  - [ ] Receipt generation
+  - [x] X402 protocol implementation (server/payment.js)
+  - [x] Express middleware integration (@x402/express)
+  - [x] EVM scheme registration (@x402/evm)
+  - [x] Facilitator client setup (testnet + mainnet)
+  - [x] USDC transaction verification (via facilitator)
+  - [x] Payment state tracking (PaymentTracker class)
+  - [x] Payment status endpoint (GET /api/payment/status/:id)
+  - [x] Client-side integration (client/x402-client.js)
+  - [x] Comprehensive documentation (docs/x402-integration.md)
+  - [x] Test script (test-x402-payment.js)
+  - [ ] Testnet validation with real transactions (NEXT STEP)
+  - [ ] Mainnet deployment (pending CDP credentials)
+- **Pricing:**
+  - Basic (Haiku): $0.01 USDC per scan
+  - Thorough (Sonnet): $0.03 USDC per scan
+- **Networks:**
+  - Testnet: Base Sepolia (eip155:84532)
+  - Mainnet: Base (eip155:8453)
+- **Facilitator:** https://www.x402.org/facilitator (testnet)
+- **Wallet:** WALLET1 (0x3e6C...3a8) for receiving payments
+- **Completed:** 2026-02-06 23:00 UTC (Trello Card #lFio4o8T - X402 Payment Integration)
 
 ### 2.3 Report Processing Pipeline
 - **Status:** 🟡 In Progress
@@ -405,13 +421,50 @@
 - **URL:** https://clawsec-skill-production.up.railway.app
 
 ### 6.2 Monitoring & Operations
-- **Status:** 🔴 Not Started
+- **Status:** ✅ Done (Production Ready - 2026-02-06 22:30 UTC)
 - **Components:**
-  - [ ] Health check endpoint
-  - [ ] Logging infrastructure
-  - [ ] Error tracking (Sentry?)
-  - [ ] Performance monitoring
-  - [ ] Uptime alerting
+  - [x] **Health check endpoint** - Enhanced with system metrics (memory, CPU, dependencies)
+  - [x] **Railway Observability Dashboard** - Setup guide for metrics, logs, alerts
+  - [x] **Error tracking (Sentry)** - Integrated SDK, performance monitoring, request tracing
+  - [x] **Uptime monitoring** - Setup guide for Better Uptime / UptimeRobot
+  - [x] **Log aggregation** - Structured JSON logging with request IDs
+  - [x] **Performance monitoring** - Response time tracking, slow request alerts
+  - [x] **Alert configuration** - Railway monitors + Sentry rules + uptime alerts
+- **Deliverables:**
+  - [x] Comprehensive monitoring guide: `docs/monitoring-setup.md` (19KB)
+  - [x] Enhanced `/health` endpoint with system metrics
+  - [x] Sentry integration in `server/index.js` (optional dependencies)
+  - [x] Structured logging with business metrics (scan volume, risk levels)
+  - [x] README monitoring section with quick setup
+  - [x] Environment variable template (SENTRY_DSN)
+- **Key Features:**
+  - Enhanced health endpoint: `/health` returns CPU, memory, uptime, dependencies
+  - Sentry error tracking: Automatic exception capture, performance monitoring (10% sampling)
+  - Structured JSON logs: Request IDs, response times, business metrics
+  - Railway dashboard guide: CPU/memory/network widgets, log queries, alert rules
+  - Uptime monitoring: External checks every 1 minute, email/SMS alerts
+  - Slow request detection: Sentry alerts for requests > 10s
+  - Incident response runbook: Step-by-step troubleshooting guide
+- **Monitoring Stack:**
+  - Railway (built-in): Metrics dashboard, log aggregation, resource alerts
+  - Sentry (optional): Error tracking, performance APM, release tracking
+  - Better Uptime (optional): External uptime checks, status page, on-call alerts
+- **Alert Thresholds:**
+  - CPU > 80% for 5 minutes → Email
+  - Memory > 450 MB → Email
+  - Error rate > 5% → Email + Sentry
+  - Service down (3 failed health checks) → Email + SMS
+  - Response time P95 > 10s → Sentry warning
+- **Documentation:** `docs/monitoring-setup.md` includes:
+  - Complete setup instructions for all monitoring tools
+  - Railway dashboard widget configuration
+  - Sentry project setup and SDK integration
+  - Uptime monitoring service comparison
+  - Log query examples and filtering syntax
+  - Performance targets and SLA metrics
+  - Incident response procedures
+  - Maintenance runbook (daily/weekly/monthly tasks)
+- **Completed:** 2026-02-06 22:30 UTC (Trello Card #39 - Railway Health Monitoring)
 
 ### 6.3 Scaling & Reliability
 - **Status:** 🔴 Not Started
