@@ -14,11 +14,12 @@ const addFormats = require('ajv-formats');
 const fs = require('fs');
 const path = require('path');
 
-// Initialize Ajv with strict mode
+// Initialize Ajv with strict mode (allow union types for schema compatibility)
 const ajv = new Ajv({
   allErrors: true,
   verbose: true,
   strict: true,
+  strictTypes: false,  // Allow union types in schemas
   validateFormats: true
 });
 
