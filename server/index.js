@@ -81,8 +81,11 @@ app.post('/api/v1/scan', async (req, res) => {
     const scanInput = req.body;
     
     // Validate input
-    if (!scanInput || typeof scanInput !== 'object') {
-      return res.status(400).json({ error: 'Invalid scan input' });
+    if (!scanInput || typeof scanInput !== 'object' || Array.isArray(scanInput)) {
+      return res.status(400).json({ 
+        error: 'Invalid scan input',
+        expected: 'JSON object with OpenClaw configuration'
+      });
     }
     
     console.log('Received scan request:', JSON.stringify(scanInput, null, 2));
@@ -242,6 +245,82 @@ function analyzeConfiguration(config, threatsIndex) {
         }
       });
     }
+  }
+  
+  // Check for Telegram bot token in config (T011)
+  if (config.channels?.telegram?.bot_token) {
+    const token = config.channels.telegram.bot_token;
+    const isHardcoded = /^\d{8,10}:[A-Za-z0-9_-]{35}$/.test(token);
+    if (isHardcoded) {
+      findings.push({
+        threat_id: 'T011',
+        severity: 'HIGH',
+        title: 'Telegram Bot Token in Configuration',
+        description: 'Bot token stored in plaintext config instead of environment variable',
+        impact: 'Bot impersonation, message interception, spam if config leaked',
+        likelihood: 'HIGH',
+        evidence: { token_format: 'hardcoded', token_length: token.length },
+        remediation: {
+          immediate: ['Move token to .env file', 'Add .env to .gitignore'],
+          short_term: ['Rotate bot token via BotFather', 'Update config to use ${TELEGRAM_BOT_TOKEN}'],
+          long_term: ['Audit git history for leaked tokens', 'Implement secrets scanning']
+        }
+      });
+    }
+  }
+  
+  // Check for Telegram chat ID whitelist (T012)
+  if (config.channels?.telegram && !config.channels.telegram.allowed_chats) {
+    findings.push({
+      threat_id: 'T012',
+      severity: 'MEDIUM',
+      title: 'No Telegram Chat ID Whitelist',
+        description: 'Bot accepts messages from any user/chat',
+        impact: 'Unauthorized access, resource abuse, information disclosure',
+        likelihood: 'MEDIUM',
+        evidence: { whitelist_configured: false },
+        remediation: {
+          immediate: ['Add allowed_chats list to telegram config'],
+          short_term: ['Test with your chat ID only'],
+          long_term: ['Implement authentication for new users']
+        }
+      });
+  }
+  
+  // Check for default port (T008)
+  if (config.gateway?.port === 2024) {
+    findings.push({
+      threat_id: 'T008',
+      severity: 'LOW',
+      title: 'Default Port Usage',
+      description: 'Using default OpenClaw port makes system easier to discover',
+      impact: 'Easier reconnaissance for attackers',
+      likelihood: 'LOW',
+      evidence: { port: 2024 },
+      remediation: {
+        immediate: [],
+        short_term: ['Change to non-standard port (e.g., 8443)'],
+        long_term: ['Use reverse proxy with standard HTTPS port']
+      }
+    });
+  }
+  
+  // Check for rate limiting (T006)
+  if (config.gateway && !config.gateway.rate_limit) {
+    findings.push({
+      threat_id: 'T006',
+      severity: 'MEDIUM',
+      title: 'No Rate Limiting',
+      description: 'Gateway has no rate limiting configured',
+      impact: 'Brute force attacks, API abuse, resource exhaustion',
+      likelihood: 'MEDIUM',
+      evidence: { rate_limit_configured: false },
+      remediation: {
+        immediate: [],
+        short_term: ['Configure gateway rate limiting', 'Set max_requests per window'],
+        long_term: ['Implement IP-based rate limiting', 'Add CAPTCHA for suspicious traffic']
+      }
+    });
   }
   
   return findings;
