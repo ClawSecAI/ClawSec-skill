@@ -445,13 +445,24 @@
 - **Deliverable:** `docs/report-template.md` ✅ Created 2026-02-06
 
 ### 5.2 Output Formats
-- **Status:** 🟡 In Progress
+- **Status:** 🟢 Testing
 - **Components:**
   - [x] **Markdown report (primary)** - Implemented and working
-  - [ ] JSON export (machine-readable) - 2 hours, high priority
+  - [x] **JSON export (machine-readable)** - ✅ COMPLETE (2026-02-07)
   - [ ] PDF generation (Puppeteer recommended) - 3 hours, medium priority
   - [ ] HTML dashboard view - 4 hours, low priority (post-hackathon)
   - [ ] Email-friendly format - Not planned
+- **JSON Export Implementation (2026-02-07):**
+  - [x] `server/json-export.js` module created (11KB)
+  - [x] Complete JSON schema with metadata, summary, findings, recommendations
+  - [x] OWASP LLM Top 10 compliance mapping
+  - [x] GDPR considerations in risk analysis
+  - [x] Risk factor extraction
+  - [x] Priority information integrated (P0-P3)
+  - [x] Token optimization statistics
+  - [x] Integration with `/api/v1/scan?format=json` endpoint
+  - [x] Test suite created (`test-json-export.js` - 12KB)
+  - [x] Documentation updated in `docs/report-template.md`
 - **Export Implementation Plan:** See `docs/report-template.md` for research and recommendations
 
 ### 5.3 OWASP LLM Top 10 & GDPR

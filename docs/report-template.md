@@ -96,23 +96,46 @@ This security audit analyzed your OpenClaw configuration and identified **3 secu
 
 ## Planned Export Formats
 
-### 🟡 JSON (Machine-Readable)
-**Status**: Planned (not yet implemented)
+### ✅ JSON (Machine-Readable)
+**Status**: ✅ Implemented (2026-02-07)
+
+**Usage**: Add `?format=json` query parameter to `/api/v1/scan` endpoint
+
+```bash
+curl -X POST https://clawsec-skill-production.up.railway.app/api/v1/scan?format=json \
+  -H "Content-Type: application/json" \
+  -d @config.json
+```
+
+**Response Structure**:
 
 ```json
 {
-  "scan_id": "clawsec-1738867800-a1b2c3",
-  "timestamp": "2026-02-06T18:30:00.000Z",
-  "version": "0.1.0-hackathon",
+  "metadata": {
+    "scan_id": "clawsec-1738867800-a1b2c3",
+    "timestamp": "2026-02-07T08:00:00.000Z",
+    "report_version": "1.0.0",
+    "clawsec_version": "0.1.0-hackathon",
+    "format": "json",
+    "generator": "ClawSec JSON Export Module"
+  },
   "summary": {
     "total_findings": 3,
     "risk_level": "HIGH",
-    "severity_counts": {
+    "risk_score": 73,
+    "score_confidence": 0.92,
+    "severity_distribution": {
       "critical": 1,
       "high": 1,
       "medium": 1,
       "low": 0
-    }
+    },
+    "key_findings": [
+      "Weak or Default Gateway Token",
+      "Public Gateway Exposure",
+      "Unencrypted Session Storage"
+    ],
+    "immediate_actions_required": 2
   },
   "findings": [
     {
@@ -134,25 +157,161 @@ This security audit analyzed your OpenClaw configuration and identified **3 secu
         ],
         "short_term": ["Implement token rotation policy"],
         "long_term": ["Add monitoring for failed auth attempts"]
+      },
+      "priority": {
+        "level": "P0",
+        "score": 95,
+        "time_to_fix": {
+          "duration": "2 hours",
+          "unit": "hours",
+          "deadline": "2026-02-07T10:00:00Z"
+        },
+        "reasoning": "Critical authentication weakness with high exploitability"
       }
     }
-  ]
+  ],
+  "recommendations": {
+    "summary": {
+      "total": 3,
+      "p0_critical": 1,
+      "p1_high": 1,
+      "p2_medium": 1,
+      "p3_low": 0
+    },
+    "immediate_actions": [
+      {
+        "threat_id": "T001",
+        "title": "Weak or Default Gateway Token",
+        "action": "Generate strong token: openssl rand -hex 32"
+      }
+    ],
+    "priority_distribution": {
+      "p0_critical": 1,
+      "p1_high": 1,
+      "p2_medium": 1,
+      "p3_low": 0
+    },
+    "rankings": [
+      {
+        "threat_id": "T001",
+        "title": "Weak or Default Gateway Token",
+        "severity": "CRITICAL",
+        "priority_level": "P0",
+        "priority_score": 95,
+        "time_to_fix": {
+          "duration": "2 hours",
+          "unit": "hours",
+          "deadline": "2026-02-07T10:00:00Z"
+        },
+        "reasoning": "Critical authentication weakness with high exploitability",
+        "exploitability": {
+          "score": 90,
+          "likelihood": "HIGH",
+          "complexity": "LOW"
+        },
+        "impact": {
+          "confidentiality": "HIGH",
+          "integrity": "HIGH",
+          "availability": "MEDIUM"
+        }
+      }
+    ]
+  },
+  "risk_analysis": {
+    "overall_score": 73,
+    "risk_level": "HIGH",
+    "confidence": 0.92,
+    "score_breakdown": {
+      "base_score": 75,
+      "context_multiplier": 1.1,
+      "diminishing_factor": 0.88
+    },
+    "risk_factors": [
+      {
+        "factor": "weak_authentication",
+        "severity": "CRITICAL",
+        "description": "Weak authentication mechanisms detected",
+        "count": 1
+      }
+    ],
+    "compliance_impact": {
+      "owasp_llm_top10": {
+        "categories_affected": [
+          {
+            "category": "LLM06 SENSITIVE INFO DISCLOSURE",
+            "findings_count": 1
+          }
+        ],
+        "total_owasp_findings": 1
+      },
+      "gdpr_considerations": {
+        "issues_found": 1,
+        "compliance_concerns": [
+          {
+            "article": "Article 32 - Security of Processing",
+            "issue": "Unencrypted data storage detected",
+            "severity": "HIGH",
+            "description": "GDPR requires appropriate technical measures to secure personal data"
+          }
+        ],
+        "recommendation": "Address identified issues to maintain GDPR compliance"
+      }
+    }
+  },
+  "optimization": {
+    "model": "claude-3-5-haiku-20241022",
+    "scan_tokens": 850,
+    "context_tokens": 12400,
+    "total_tokens": 13250,
+    "categories_loaded": 5,
+    "categories_skipped": 2,
+    "budget_used_percent": 38.5
+  },
+  "scan_context": {
+    "configuration_analyzed": ["gateway", "sessions", "channels", "tools"],
+    "scan_type": "configuration_audit",
+    "threat_database_version": "0.1.0"
+  },
+  "next_steps": {
+    "immediate": [
+      "Review and address all CRITICAL severity findings immediately",
+      "Backup current configuration before making changes",
+      "Rotate any exposed credentials found in this scan"
+    ],
+    "short_term": [
+      "Address all HIGH severity findings within 48 hours",
+      "Implement monitoring for security events",
+      "Review and update access controls"
+    ],
+    "long_term": [
+      "Schedule regular security scans (weekly recommended)",
+      "Implement automated security testing in CI/CD",
+      "Conduct security training for team members"
+    ]
+  }
 }
 ```
 
 **Use Cases**:
-- Agent-to-agent communication
-- Automated remediation pipelines
-- Integration with SIEM/monitoring tools
-- Programmatic analysis
+- ✅ Agent-to-agent communication
+- ✅ Automated remediation pipelines
+- ✅ Integration with SIEM/monitoring tools
+- ✅ Programmatic analysis
+- ✅ Dashboard visualizations
+- ✅ CI/CD security gates
 
-**Implementation Plan**:
-1. Extract report generation into separate function
-2. Add `toJSON()` method to convert Markdown report to JSON
-3. Add `/api/v1/scan` response format option (`?format=json`)
-4. Schema validation with JSON Schema
+**Features**:
+- ✅ Complete findings with evidence and remediation steps
+- ✅ Prioritized recommendations (P0-P3)
+- ✅ Risk analysis with 0-100 scoring
+- ✅ OWASP LLM Top 10 compliance mapping
+- ✅ GDPR considerations
+- ✅ Token optimization statistics
+- ✅ Structured for downstream processing
 
-**Time Estimate**: 2 hours
+**Module**: `server/json-export.js`
+**Test Suite**: `test-json-export.js`
+**Implementation**: Full JSON schema with metadata, summary, findings, recommendations, risk analysis, and compliance
 
 ---
 

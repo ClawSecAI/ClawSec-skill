@@ -17,6 +17,21 @@ const {
   PRICING
 } = require('./payment');
 
+// Authentication & Rate Limiting
+const { requireApiKey, optionalApiKey, apiKeyStore, generateApiKey } = require('./auth');
+const { 
+  createScanRateLimiter, 
+  createReportRateLimiter, 
+  createGlobalRateLimiter,
+  getRateLimitConfig 
+} = require('./rate-limit');
+
+// Job Queue for Async Processing
+const { jobQueue, JobStatus, processScanJob } = require('./job-queue');
+
+// JSON Export Module
+const { generateJSONReport, exportJSON } = require('./json-export');
+
 // Sentry Error Tracking (Optional - requires SENTRY_DSN env var)
 let Sentry;
 if (process.env.SENTRY_DSN) {
@@ -89,6 +104,14 @@ if (Sentry) {
 // Middleware
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
+
+// Apply global rate limiting (if enabled)
+if (process.env.ENABLE_RATE_LIMIT !== 'false') {
+  app.use(createGlobalRateLimiter());
+  console.log('✅ Global rate limiting enabled');
+} else {
+  console.log('ℹ️  Global rate limiting disabled');
+}
 
 // Enhanced request logging with performance metrics
 app.use((req, res, next) => {
@@ -223,14 +246,25 @@ app.get('/api/v1', (req, res) => {
     description: 'AI-powered security audits for OpenClaw',
     endpoints: {
       health: 'GET /health',
+      info: 'GET /api/v1',
       scan: 'POST /api/v1/scan',
-      threats: 'GET /api/v1/threats'
+      report: 'GET /api/v1/report/:id',
+      threats: 'GET /api/v1/threats',
+      queue_stats: 'GET /api/v1/queue/stats',
+      payment_status: 'GET /api/payment/status/:id'
+    },
+    features: {
+      async_processing: true,
+      rate_limiting: process.env.ENABLE_RATE_LIMIT !== 'false',
+      authentication: process.env.ENABLE_AUTH !== 'false',
+      payment: process.env.ENABLE_PAYMENT === 'true'
     },
     payment: {
       enabled: process.env.ENABLE_PAYMENT === 'true',
       protocol: 'X402',
       network: process.env.NETWORK || 'base-sepolia'
     },
+    rate_limits: getRateLimitConfig(),
     docs: 'https://github.com/ClawSecAI/ClawSec-skill'
   });
 });
@@ -252,8 +286,89 @@ if (paymentServer && paymentConfig) {
   app.use(paymentMiddleware(paymentConfig, paymentServer));
 }
 
+// Report retrieval endpoint (async job results)
+app.get('/api/v1/report/:id', 
+  createReportRateLimiter(), 
+  optionalApiKey,
+  (req, res) => {
+    try {
+      const scanId = req.params.id;
+      const job = jobQueue.getJob(scanId);
+      
+      if (!job) {
+        return res.status(404).json({
+          error: 'Report Not Found',
+          message: `No report found with ID: ${scanId}`,
+          scan_id: scanId,
+          note: 'Reports are kept for 1 hour after completion'
+        });
+      }
+      
+      // Return job status and result
+      const response = {
+        scan_id: scanId,
+        status: job.status,
+        progress: job.progress,
+        created_at: job.createdAt,
+        started_at: job.startedAt,
+        completed_at: job.completedAt,
+        expires_at: job.expiresAt
+      };
+      
+      // Include result if completed
+      if (job.status === JobStatus.COMPLETED && job.result) {
+        response.result = job.result;
+      }
+      
+      // Include error if failed
+      if (job.status === JobStatus.FAILED && job.error) {
+        response.error = job.error;
+      }
+      
+      // Set appropriate status code
+      let statusCode = 200;
+      if (job.status === JobStatus.PENDING || job.status === JobStatus.PROCESSING) {
+        statusCode = 202; // Accepted (still processing)
+      } else if (job.status === JobStatus.FAILED) {
+        statusCode = 500; // Internal error
+      }
+      
+      res.status(statusCode).json(response);
+      
+    } catch (error) {
+      console.error('Report retrieval error:', error);
+      res.status(500).json({ 
+        error: 'Failed to retrieve report', 
+        message: error.message 
+      });
+    }
+  }
+);
+
+// Job queue status endpoint (admin/debugging)
+app.get('/api/v1/queue/stats', 
+  optionalApiKey,
+  (req, res) => {
+    try {
+      const stats = jobQueue.getStats();
+      res.json({
+        queue: 'ClawSec Job Queue',
+        timestamp: new Date().toISOString(),
+        stats: stats,
+        rate_limits: getRateLimitConfig()
+      });
+    } catch (error) {
+      console.error('Queue stats error:', error);
+      res.status(500).json({ error: 'Failed to get queue stats' });
+    }
+  }
+);
+
 // Main scan endpoint
-app.post('/api/v1/scan', async (req, res) => {
+app.post('/api/v1/scan', 
+  createScanRateLimiter(), // Rate limiting
+  optionalApiKey,          // Optional authentication
+  async (req, res) => {
   const scanStartTime = Date.now();
   
   try {
@@ -278,6 +393,42 @@ app.post('/api/v1/scan', async (req, res) => {
     }
     
     console.log('Received scan request:', JSON.stringify(scanInput, null, 2));
+    
+    // Check if async mode requested
+    const asyncMode = req.query.async === 'true' || req.headers['x-async-processing'] === 'true';
+    
+    // If async mode, create job and return immediately
+    if (asyncMode) {
+      const scanId = `clawsec-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+      
+      // Create job in queue
+      jobQueue.createJob(scanId, {
+        scanInput,
+        apiKey: req.apiKey,
+        paymentVerified: req.x402?.payment?.verified || false
+      });
+      
+      // Process job asynchronously (don't await)
+      processScanJob(
+        jobQueue, 
+        scanId, 
+        scanInput, 
+        analyzeConfiguration, 
+        generateReport
+      ).catch(err => {
+        console.error(`Async job ${scanId} failed:`, err);
+      });
+      
+      // Return 202 Accepted with job ID
+      return res.status(202).json({
+        message: 'Scan request accepted',
+        scan_id: scanId,
+        status: 'pending',
+        status_url: `/api/v1/report/${scanId}`,
+        estimated_completion: '30-60 seconds',
+        instructions: `Poll ${req.protocol}://${req.get('host')}/api/v1/report/${scanId} to get results`
+      });
+    }
     
     // Check payment (if enabled)
     if (process.env.ENABLE_PAYMENT === 'true') {
@@ -426,7 +577,33 @@ app.post('/api/v1/scan', async (req, res) => {
       payment_verified: paymentVerified
     }));
     
-    // Return report
+    // Check output format (default: markdown, optional: json)
+    const format = req.query.format || 'markdown';
+    
+    if (format === 'json') {
+      // Generate pure JSON report (machine-readable format)
+      const jsonReport = generateJSONReport(
+        scanId,
+        scanInput,
+        findings,
+        threatsIndex,
+        scoreResult,
+        prioritized,
+        {
+          model: optimizedContext.stats.modelName,
+          scan_tokens: optimizedContext.stats.scanTokens,
+          context_tokens: optimizedContext.stats.contextTokens,
+          total_tokens: optimizedContext.stats.totalTokens,
+          categories_loaded: optimizedContext.stats.categoriesLoaded,
+          categories_skipped: optimizedContext.stats.categoriesSkipped,
+          budget_used_percent: optimizedContext.stats.budgetUsedPercent
+        }
+      );
+      
+      return res.json(jsonReport);
+    }
+    
+    // Default: Return standard response with markdown report
     res.json(response);
     
   } catch (error) {
@@ -835,6 +1012,33 @@ app.get('/api/payment/status/:id', (req, res) => {
   });
 });
 
+// API key management endpoints (admin only in production)
+app.get('/api/v1/keys', (req, res) => {
+  // In production, require admin authentication
+  const keys = apiKeyStore.list();
+  res.json({
+    keys: keys,
+    count: keys.length
+  });
+});
+
+app.post('/api/v1/keys/generate', (req, res) => {
+  // In production, require admin authentication
+  const { name = 'New API Key', tier = 'basic' } = req.body;
+  
+  const newKey = generateApiKey();
+  apiKeyStore.addKey(newKey, { name, tier });
+  
+  res.status(201).json({
+    message: 'API key created successfully',
+    key: newKey,
+    name: name,
+    tier: tier,
+    warning: 'Save this key securely. It will not be shown again.',
+    usage: `Include in requests as: X-API-Key: ${newKey}`
+  });
+});
+
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({ error: 'Not Found', path: req.path });
@@ -864,8 +1068,16 @@ if (require.main === module) {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
     console.log(`📊 Health check: http://localhost:${PORT}/health`);
     console.log(`🔍 API info: http://localhost:${PORT}/api/v1`);
-    console.log(`\n💡 Payment: ${process.env.ENABLE_PAYMENT === 'true' ? 'ENABLED' : 'DISABLED (demo mode)'}`);
-    console.log(`🌐 Network: ${process.env.NETWORK || 'base-sepolia'}\n`);
+    console.log(`\n📋 Features:`);
+    console.log(`   💡 Payment: ${process.env.ENABLE_PAYMENT === 'true' ? 'ENABLED' : 'DISABLED (demo mode)'}`);
+    console.log(`   🌐 Network: ${process.env.NETWORK || 'base-sepolia'}`);
+    console.log(`   🔐 Authentication: ${process.env.ENABLE_AUTH !== 'false' ? 'ENABLED' : 'DISABLED'}`);
+    console.log(`   ⏱️  Rate Limiting: ${process.env.ENABLE_RATE_LIMIT !== 'false' ? 'ENABLED' : 'DISABLED'}`);
+    console.log(`   ⚡ Async Processing: ENABLED`);
+    console.log(`\n📝 Endpoints:`);
+    console.log(`   POST /api/v1/scan - Submit security scan`);
+    console.log(`   POST /api/v1/scan?async=true - Async scan (returns job ID)`);
+    console.log(`   GET  /api/v1/report/:id - Retrieve scan results\n`);
   });
 }
 
