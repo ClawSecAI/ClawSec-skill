@@ -39,9 +39,10 @@
     "cors": "^2.8.5",
     "ajv": "^8.12.0",
     "ajv-formats": "^3.0.1",
-    "@x402/express": "^0.7.3",
-    "@x402/evm": "^0.7.3",
-    "@x402/core": "^0.7.3"
+    "@x402/express": "^2.3.0",
+    "@x402/evm": "^2.3.0",
+    "@x402/core": "^2.3.0",
+    "express-rate-limit": "^7.1.5"
   },
   "optionalDependencies": {
     "@sentry/node": "^7.100.0",
