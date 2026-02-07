@@ -278,6 +278,37 @@
     - **Blocker Type:** Railway deployment issue (app not running)
     - **Blocker Owner**: @stanhaupt1 (Railway dashboard access required)
     - **Next Action**: Check Railway dashboard, deployment logs, verify app is running
+  - [x] **Testnet validation CORRECTED URL attempt (2026-02-07 13:36 UTC - Card #43 CORRECTED URL):**
+    - [x] **CRITICAL FIX:** Correct Railway URL identified: `https://clawsec-skill-production.up.railway.app` (with "skill")
+    - [x] Previous attempts used wrong URL: `https://clawsec-production.up.railway.app` (missing "skill")
+    - [x] Server accessibility verified with correct URL
+    - [x] **Health Check Result:** 503 Degraded (server running, Anthropic not configured)
+    - [x] **API Configuration Result:** 200 OK - Payment is **DISABLED**
+      ```json
+      "payment": {
+        "enabled": false,  ← BLOCKER
+        "protocol": "X402",
+        "network": "base-sepolia"
+      }
+      ```
+    - [x] Updated `docs/x402-testnet-results.md` with complete findings (7.6KB)
+    - [x] Created `VALIDATION-EXECUTION-SUMMARY.md` for main agent (7.1KB)
+    - [x] Root cause identified: Railway environment variables not configured
+    - [x] Configuration instructions documented for @stanhaupt1
+    - [x] Test scripts updated with correct URL:
+      - `run-railway-test.js` ✅
+      - `test-x402-payment.js` ✅
+      - `run-validation.sh` ✅
+    - **Status**: ❌ BLOCKED - Payment disabled on Railway (requires env vars)
+    - **Required Config:**
+      - `ENABLE_PAYMENT=true`
+      - `PAYMENT_WALLET_ADDRESS=0x3e6C025206fcefFCd1637d46ff0534C8783dE3a8`
+      - `PAYMENT_NETWORK=eip155:84532`
+      - `USDC_CONTRACT_ADDRESS=0x036CbD53842c5426634e7929541eC2318f3dCF7e`
+      - `BASE_SEPOLIA_RPC=https://sepolia.base.org`
+    - **Blocker Owner**: @stanhaupt1 (Railway dashboard access required)
+    - **Next Action**: Configure Railway environment variables, redeploy, notify for re-test
+    - **Estimated Time to Unblock**: 15-30 min (Stan config) + 30-60 min (re-validation)
   - [ ] **Testnet validation execution** 🔴 BLOCKED
     - **Status**: Waiting for Railway server fix
     - **Command**: First fix server, then: `railway shell` → `node validate-testnet.js`
@@ -615,7 +646,22 @@
   - Typical size: 80-150 KB for standard reports
   - Supports large reports (10+ findings tested)
   - Edge case handling (no findings, secure systems)
-- **Export Implementation Plan:** See `docs/report-template.md` for research and recommendations
+- **PDF Export Testing (2026-02-07 13:32 UTC - Trello Card #51):**
+  - [x] Implementation review complete - all functions verified
+  - [x] Test suite validated - 6 tests covering all scenarios
+  - [x] PDF structure validation - valid PDF format confirmed
+  - [x] Content rendering validation - all sections rendering correctly
+  - [x] Formatting validation - professional CSS styling verified
+  - [x] File size validation - 80-150 KB (within acceptable range)
+  - [x] Test scenarios validated - small, large, edge cases
+  - [x] Performance metrics documented - 5-15s generation time
+  - [x] API integration verified - `/scan?format=pdf` endpoint working
+  - [x] Error handling verified - graceful fallback to JSON
+  - [x] Documentation updated - `docs/report-template.md` marked complete
+  - [x] Validation report created - `PDF-EXPORT-TESTING-REPORT.md` (19KB)
+  - **Status:** ✅ Production-ready - All validation checks passed
+  - **Next:** Move to "To Review" after git push and Trello update
+- **Export Implementation Plan:** See `docs/report-template.md` for complete documentation
 
 ### 5.3 OWASP LLM Top 10 & GDPR
 - **Status:** ✅ Complete & Verified (2026-02-07 09:30 UTC)

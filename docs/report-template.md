@@ -42,12 +42,21 @@ For each finding:
   - Short-term (this week)
   - Long-term (ongoing)
 
-### 5. Next Steps
+### 5. OWASP LLM Top 10 Compliance (NEW - 2026-02-07)
+- Compliance table showing status for all 10 OWASP LLM categories
+- Overall compliance percentage
+- Compliance risk level
+- Critical categories requiring immediate attention
+- Severity breakdown per category (Critical/High/Medium/Low)
+- Status indicators (✅ Compliant, ⚠️ Issues Found, 🚨 Critical Issues)
+- Links to OWASP mapping documentation
+
+### 6. Next Steps
 Actionable checklist organized by:
 - Immediate (Today)
 - This Week
 
-### 6. Footer
+### 7. Footer
 - Generation metadata
 - Support link
 
@@ -315,111 +324,85 @@ curl -X POST https://clawsec-skill-production.up.railway.app/api/v1/scan?format=
 
 ---
 
-### 🔴 PDF (Human-Readable Export)
-**Status**: Not Started
+### ✅ PDF (Professional Documents)
+**Status**: ✅ Complete (2026-02-07)
 
-**Research Findings**:
+**Usage**: Add `?format=pdf` query parameter to `/api/v1/scan` endpoint
 
-#### Option 1: Puppeteer (Recommended)
 ```bash
-npm install puppeteer
+curl -X POST https://clawsec-skill-production.up.railway.app/api/v1/scan?format=pdf \
+  -H "Content-Type: application/json" \
+  -d @config.json \
+  --output clawsec-report.pdf
 ```
 
-**Pros**:
-- Renders Markdown → HTML → PDF
-- Full CSS styling support
-- Professional appearance
-- Easy to customize
+**Module**: `server/pdf-export.js` (20KB, 680+ lines)  
+**Test Suite**: `test-pdf-export.js` (14KB, 6 comprehensive tests)  
+**Test Report**: `PDF-EXPORT-TESTING-REPORT.md` (validation complete)
 
-**Cons**:
-- Large dependency (~170MB with Chrome)
-- Slower generation time (~2-3s)
-- Memory intensive
+**Key Features**:
+- ✅ Puppeteer-based HTML-to-PDF conversion
+- ✅ Professional CSS styling with color-coded severity badges
+- ✅ Multiple page formats (A4, Letter) with customizable margins
+- ✅ Complete report sections (metadata, summary, findings, remediation, compliance)
+- ✅ OWASP LLM Top 10 compliance checklist
+- ✅ GDPR considerations included
+- ✅ High-resolution rendering (2x device scale factor)
+- ✅ Print-friendly layout with page breaks
+- ✅ Graceful error handling (fallback to JSON on failure)
 
-**Implementation**:
+**Core Functions**:
 ```javascript
-const puppeteer = require('puppeteer');
-const marked = require('marked');
+// server/pdf-export.js
+const { generatePDFFromScan, generateHTMLReport, generatePDFReport } = require('./server/pdf-export');
 
-async function generatePDF(markdownReport) {
-  const html = marked.parse(markdownReport);
-  const styledHtml = `
-    <html>
-      <head>
-        <style>
-          body { font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-          h1 { color: #1e3a8a; border-bottom: 2px solid #3b82f6; }
-          .critical { color: #dc2626; }
-          .high { color: #ea580c; }
-          table { border-collapse: collapse; width: 100%; }
-          td, th { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        </style>
-      </head>
-      <body>${html}</body>
-    </html>
-  `;
-  
-  const browser = await puppeteer.launch();
-  const page = await browser.newPage();
-  await page.setContent(styledHtml);
-  const pdf = await page.pdf({ format: 'A4', printBackground: true });
-  await browser.close();
-  
-  return pdf;
-}
+// Generate PDF from scan results
+const pdfBuffer = await generatePDFFromScan(
+  scanId, scanInput, findings, threatsIndex, 
+  scoreResult, prioritized, optimization, 
+  { format: 'A4', printBackground: true }
+);
+
+// Returns: Buffer (PDF bytes)
 ```
 
-#### Option 2: wkhtmltopdf (Lightweight)
-```bash
-apt-get install wkhtmltopdf
+**API Response**:
+```http
+HTTP/1.1 200 OK
+Content-Type: application/pdf
+Content-Disposition: attachment; filename="clawsec-report-{scanId}.pdf"
+
+[PDF binary data]
 ```
 
-**Pros**:
-- Native binary (no Node dependencies)
-- Fast generation (<1s)
-- Low memory footprint
+**Performance**:
+- **Generation Time**: 15-30s (first run), 5-15s (subsequent)
+- **File Size**: 80-150 KB (standard 3-10 finding reports)
+- **Memory**: ~400-500 MB peak (Puppeteer browser instance)
 
-**Cons**:
-- Limited CSS support
-- Platform-dependent installation
-- Less control over styling
+**Use Cases**:
+- ✅ Professional audit documentation
+- ✅ Client deliverables
+- ✅ Compliance reporting
+- ✅ Executive presentations
+- ✅ Archival storage
+- ✅ Email attachments
 
-**Implementation**:
-```javascript
-const { exec } = require('child_process');
-const fs = require('fs');
+**Test Scenarios** (6 tests, all passing):
+1. JSON report generation (prerequisite)
+2. HTML template rendering
+3. Full PDF pipeline (A4)
+4. Letter-sized PDF generation
+5. Large report stress test (10 findings)
+6. Edge case - secure system (no findings)
 
-function generatePDF(markdownReport, outputPath) {
-  const html = marked.parse(markdownReport);
-  const htmlPath = '/tmp/report.html';
-  fs.writeFileSync(htmlPath, html);
-  
-  return new Promise((resolve, reject) => {
-    exec(`wkhtmltopdf ${htmlPath} ${outputPath}`, (err) => {
-      if (err) reject(err);
-      else resolve(outputPath);
-    });
-  });
-}
-```
+**Known Limitations**:
+- First run downloads Chromium (~170-300MB, one-time)
+- Generation slower than JSON/Markdown (5-15s vs <1s)
+- Higher memory usage (~400MB vs ~50MB)
+- Railway deployment requires `--no-sandbox` flag (already configured)
 
-#### Option 3: LaTeX (Enterprise Grade)
-```bash
-apt-get install texlive-full
-```
-
-**Pros**:
-- Professional typesetting
-- Perfect for technical reports
-- Industry standard
-
-**Cons**:
-- Steep learning curve
-- Complex template syntax
-- Large dependency (~3GB)
-- Slow compilation
-
-**Not recommended for hackathon MVP.**
+**Validation Status**: ✅ Production-ready (tested 2026-02-07)
 
 ---
 
