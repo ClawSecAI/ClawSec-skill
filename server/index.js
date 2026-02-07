@@ -556,22 +556,18 @@ app.post('/api/v1/scan',
       });
     }
     
-    // Check payment (if enabled)
-    if (process.env.ENABLE_PAYMENT === 'true') {
-      const paymentHeader = req.headers['x-payment'];
-      if (!paymentHeader) {
-        return res.status(402).json({
-          error: 'Payment Required',
-          protocol: 'X402',
-          price: '0.01 USDC',
-          network: 'base-sepolia',
-          instructions: 'Include X-PAYMENT header with signed payment payload'
-        });
+    // Payment verification is handled automatically by X402 middleware (line 313)
+    // If payment is enabled and required, middleware will:
+    // 1. Return 402 with PAYMENT-REQUIRED header (if no payment provided)
+    // 2. Verify payment with facilitator (if payment signature provided)
+    // 3. Set req.x402.payment.verified = true (on successful payment)
+    // This route only executes if payment was verified or payment is disabled
+    
+    if (paymentVerified) {
+      console.log('✅ Payment verified by X402 middleware');
+      if (paymentData) {
+        console.log(`   Transaction: ${paymentData.transactionHash || 'pending'}`);
       }
-      
-      // TODO: Verify payment with X402 facilitator
-      // For hackathon demo, accept any payment header
-      console.log('Payment received (demo mode):', paymentHeader.substring(0, 20) + '...');
     }
     
     // Load threat database index
