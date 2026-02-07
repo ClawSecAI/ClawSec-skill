@@ -4,33 +4,56 @@
 
 ---
 
+## User Interaction Model
+
+**How users invoke ClawSec:**
+- **Natural Language** - No special commands required, just say: "Run a security audit" or "Check my OpenClaw for vulnerabilities"
+- **Works in Telegram/WhatsApp/Discord** - Regular chat messages, no `/clawsec` or `/audit` commands needed
+- **Agent recognizes intent** - OpenClaw's skill system automatically activates ClawSec when security audit is requested
+
+**Payment Model:**
+- **Autonomous Mode (Default)** - Agent has its own USDC wallet, signs payments automatically, user just asks and receives results
+- **Interactive Mode (Optional)** - Agent prompts user to approve payment in MetaMask/Coinbase Wallet via WalletConnect
+
+**Demo UX:**
+```
+User: "Check my OpenClaw security"
+Agent: "Running ClawSec audit... (payment: $0.01 USDC)"
+       [2 seconds later]
+Agent: "⚠️ Audit Complete | Risk Score: 85/100 (CRITICAL)
+       🔴 IMMEDIATE: Weak gateway token, Public exposure
+       💰 Payment confirmed: 0xabc123..."
+```
+
+---
+
 ## Phase 1: Skill Installation
 
 **User installs the ClawSec skill into their OpenClaw instance via CLI (`openclaw skills install clawsec`) or marketplace, which loads the natural language skill instructions from SKILL.md.**
 
 ---
 
-## Phase 2: Configuration Gathering
+## Phase 2: Scan & Sanitization
 
-**The OpenClaw agent reads the user's configuration files (gateway, sessions, tools, channels) and automatically sanitizes sensitive data (API keys, emails, IPs) using 70+ credential detection patterns before transmission.**
+**The OpenClaw agent scans the user's configuration files (gateway, sessions, tools, channels) and automatically sanitizes sensitive data (API keys, emails, IPs) using 70+ credential detection patterns, preparing a safe payload for transmission.**
 
 ---
 
 ## Phase 3: Payment Preparation
 
-**The agent displays pricing options ($0.01 for basic, $0.03 for thorough scans) and prompts the user to prepare their USDC wallet on Base network for payment.**
+**The agent displays pricing options ($0.01 for basic, $0.03 for thorough scans) and prepares payment using its configured USDC wallet on Base network (autonomous mode) or prompts the user to connect their wallet (interactive mode).**
 
 ---
 
-## Phase 4: Scan Submission (Without Payment)
+## Phase 4: Audit Request (Initial)
 
-**The ClawSec skill sends the sanitized configuration to the ClawSec API, which responds with HTTP 402 Payment Required and a PAYMENT-REQUIRED header containing X402 protocol payment instructions (amount, recipient wallet, network).**
+**The ClawSec skill sends the sanitized data to the ClawSec API for analysis, which responds with HTTP 402 Payment Required and a PAYMENT-REQUIRED header containing X402 protocol payment instructions (amount, recipient wallet, network).**
 
 ---
 
 ## Phase 5: Payment Processing
 
-**The user signs a USDC payment transaction in their wallet, the X402 client creates a payment signature payload and retries the API request with the PAYMENT-SIGNATURE header, then the Coinbase facilitator verifies the signature and confirms the payment is valid before allowing the scan to proceed.**
+**The agent's wallet automatically signs the USDC payment transaction (autonomous mode) or prompts user approval (interactive mode), the X402 client creates a payment signature payload and retries the audit request with the PAYMENT-SIGNATURE header, then the Coinbase facilitator verifies the signature and confirms the payment is valid before allowing the audit to proceed.**
 
 ---
 
