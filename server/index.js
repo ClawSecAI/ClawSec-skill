@@ -32,6 +32,18 @@ const { jobQueue, JobStatus, processScanJob } = require('./job-queue');
 // JSON Export Module
 const { generateJSONReport, exportJSON } = require('./json-export');
 
+// PDF Export Module
+const { generatePDFFromScan } = require('./pdf-export');
+
+// OWASP LLM Top 10 Mapper
+const { 
+  generateOWASPCompliance, 
+  generateOWASPChecklistMarkdown 
+} = require('./owasp-mapper');
+
+// Report Caching System
+const { getReportCache } = require('./report-cache');
+
 // Sentry Error Tracking (Optional - requires SENTRY_DSN env var)
 let Sentry;
 if (process.env.SENTRY_DSN) {
@@ -94,6 +106,12 @@ if (process.env.ENABLE_PAYMENT === 'true') {
 } else {
   console.log('ℹ️  X402 payment disabled (demo mode)');
 }
+
+// Initialize report cache
+const reportCache = getReportCache({
+  ttl: parseInt(process.env.CACHE_TTL) || 24 * 60 * 60 * 1000, // 24 hours default
+  enableMetrics: true
+});
 
 // Sentry request handler (must be first middleware)
 if (Sentry) {
@@ -239,7 +257,9 @@ function checkAnthropicKey() {
 }
 
 // API info
-app.get('/api/v1', (req, res) => {
+app.get('/api/v1', async (req, res) => {
+  const cacheMetrics = await reportCache.getMetrics();
+  
   res.json({
     name: 'ClawSec API',
     version: '0.1.0-hackathon',
@@ -251,13 +271,22 @@ app.get('/api/v1', (req, res) => {
       report: 'GET /api/v1/report/:id',
       threats: 'GET /api/v1/threats',
       queue_stats: 'GET /api/v1/queue/stats',
+      cache_stats: 'GET /api/v1/cache/stats',
+      cache_invalidate: 'DELETE /api/v1/cache/:id',
+      cache_clear: 'DELETE /api/v1/cache',
       payment_status: 'GET /api/payment/status/:id'
     },
     features: {
       async_processing: true,
+      report_caching: true,
       rate_limiting: process.env.ENABLE_RATE_LIMIT !== 'false',
       authentication: process.env.ENABLE_AUTH !== 'false',
       payment: process.env.ENABLE_PAYMENT === 'true'
+    },
+    cache: {
+      backend: reportCache.getBackend(),
+      ttl_hours: parseFloat(cacheMetrics.ttl_hours),
+      hit_rate: cacheMetrics.hitRate
     },
     payment: {
       enabled: process.env.ENABLE_PAYMENT === 'true',
@@ -286,13 +315,35 @@ if (paymentServer && paymentConfig) {
   app.use(paymentMiddleware(paymentConfig, paymentServer));
 }
 
-// Report retrieval endpoint (async job results)
+// Report retrieval endpoint (async job results with caching)
 app.get('/api/v1/report/:id', 
   createReportRateLimiter(), 
   optionalApiKey,
-  (req, res) => {
+  async (req, res) => {
     try {
       const scanId = req.params.id;
+      const model = req.query.model || 'default'; // Support different model outputs
+      
+      // Try cache first
+      const cachedReport = await reportCache.get(scanId, model);
+      if (cachedReport) {
+        console.log(JSON.stringify({
+          timestamp: new Date().toISOString(),
+          level: 'info',
+          type: 'cache_hit',
+          scan_id: scanId,
+          model,
+          source: 'cache'
+        }));
+        
+        return res.status(200).json({
+          ...cachedReport,
+          cached: true,
+          cache_backend: reportCache.getBackend()
+        });
+      }
+      
+      // Cache miss - check job queue
       const job = jobQueue.getJob(scanId);
       
       if (!job) {
@@ -300,7 +351,8 @@ app.get('/api/v1/report/:id',
           error: 'Report Not Found',
           message: `No report found with ID: ${scanId}`,
           scan_id: scanId,
-          note: 'Reports are kept for 1 hour after completion'
+          note: 'Reports are kept for 1 hour in job queue after completion',
+          cache_checked: true
         });
       }
       
@@ -312,12 +364,18 @@ app.get('/api/v1/report/:id',
         created_at: job.createdAt,
         started_at: job.startedAt,
         completed_at: job.completedAt,
-        expires_at: job.expiresAt
+        expires_at: job.expiresAt,
+        cached: false
       };
       
       // Include result if completed
       if (job.status === JobStatus.COMPLETED && job.result) {
         response.result = job.result;
+        
+        // Cache the completed result (asynchronously - don't wait)
+        reportCache.set(scanId, model, response).catch(err => {
+          console.error('Failed to cache report:', err);
+        });
       }
       
       // Include error if failed
@@ -345,21 +403,89 @@ app.get('/api/v1/report/:id',
   }
 );
 
-// Job queue status endpoint (admin/debugging)
+// Job queue status endpoint (admin/debugging) with cache metrics
 app.get('/api/v1/queue/stats', 
   optionalApiKey,
-  (req, res) => {
+  async (req, res) => {
     try {
       const stats = jobQueue.getStats();
+      const cacheMetrics = await reportCache.getMetrics();
+      
       res.json({
         queue: 'ClawSec Job Queue',
         timestamp: new Date().toISOString(),
         stats: stats,
+        cache: cacheMetrics,
         rate_limits: getRateLimitConfig()
       });
     } catch (error) {
       console.error('Queue stats error:', error);
       res.status(500).json({ error: 'Failed to get queue stats' });
+    }
+  }
+);
+
+// Cache management endpoints
+app.get('/api/v1/cache/stats',
+  optionalApiKey,
+  async (req, res) => {
+    try {
+      const metrics = await reportCache.getMetrics();
+      res.json({
+        cache: 'ClawSec Report Cache',
+        timestamp: new Date().toISOString(),
+        metrics
+      });
+    } catch (error) {
+      console.error('Cache stats error:', error);
+      res.status(500).json({ error: 'Failed to get cache stats' });
+    }
+  }
+);
+
+// Manual cache invalidation endpoint
+app.delete('/api/v1/cache/:id',
+  optionalApiKey,
+  async (req, res) => {
+    try {
+      const scanId = req.params.id;
+      const model = req.query.model || null;
+      
+      const deleted = await reportCache.invalidate(scanId, model);
+      
+      if (deleted) {
+        res.json({
+          message: 'Cache invalidated',
+          scan_id: scanId,
+          model: model || 'all models',
+          timestamp: new Date().toISOString()
+        });
+      } else {
+        res.status(404).json({
+          error: 'Cache entry not found',
+          scan_id: scanId
+        });
+      }
+    } catch (error) {
+      console.error('Cache invalidation error:', error);
+      res.status(500).json({ error: 'Failed to invalidate cache' });
+    }
+  }
+);
+
+// Clear entire cache endpoint (admin only in production)
+app.delete('/api/v1/cache',
+  optionalApiKey,
+  async (req, res) => {
+    try {
+      await reportCache.clear();
+      res.json({
+        message: 'Cache cleared',
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Cache clear error:', error);
+      res.status(500).json({ error: 'Failed to clear cache' });
     }
   }
 );
@@ -488,8 +614,11 @@ app.post('/api/v1/scan',
       scanType: 'config'
     });
     
-    // Generate report with prioritized recommendations
-    const report = generateReport(scanId, scanInput, findings, threatsIndex, scoreResult, prioritized);
+    // Generate OWASP LLM Top 10 compliance summary
+    const owaspCompliance = generateOWASPCompliance(findings);
+    
+    // Generate report with prioritized recommendations and OWASP compliance
+    const report = generateReport(scanId, scanInput, findings, threatsIndex, scoreResult, prioritized, owaspCompliance);
     
     // Build response object
     const response = {
@@ -501,6 +630,20 @@ app.post('/api/v1/scan',
       risk_score: scoreResult.score, // NEW: 0-100 normalized score
       score_confidence: scoreResult.confidence,
       findings: findings, // Include findings for validation and API consumers
+      owasp_compliance: owaspCompliance ? {
+        version: owaspCompliance.version,
+        overall_compliance: owaspCompliance.overall_compliance,
+        compliant_categories: owaspCompliance.compliant_categories,
+        total_categories: owaspCompliance.total_categories,
+        overall_risk: owaspCompliance.overall_risk,
+        categories: owaspCompliance.categories.map(cat => ({
+          id: cat.id,
+          name: cat.name,
+          status: cat.status,
+          findings_count: cat.findings_count,
+          severity_breakdown: cat.severity_breakdown
+        }))
+      } : null,
       prioritized_recommendations: prioritized ? {
         summary: prioritized.summary,
         rankings: prioritized.rankings.map(f => ({
@@ -577,7 +720,7 @@ app.post('/api/v1/scan',
       payment_verified: paymentVerified
     }));
     
-    // Check output format (default: markdown, optional: json)
+    // Check output format (default: markdown, optional: json, pdf)
     const format = req.query.format || 'markdown';
     
     if (format === 'json') {
@@ -601,6 +744,81 @@ app.post('/api/v1/scan',
       );
       
       return res.json(jsonReport);
+    }
+    
+    if (format === 'pdf') {
+      // Generate PDF report (professional document format)
+      try {
+        const pdfBuffer = await generatePDFFromScan(
+          scanId,
+          scanInput,
+          findings,
+          threatsIndex,
+          scoreResult,
+          prioritized,
+          {
+            model: optimizedContext.stats.modelName,
+            scan_tokens: optimizedContext.stats.scanTokens,
+            context_tokens: optimizedContext.stats.contextTokens,
+            total_tokens: optimizedContext.stats.totalTokens,
+            categories_loaded: optimizedContext.stats.categoriesLoaded,
+            categories_skipped: optimizedContext.stats.categoriesSkipped,
+            budget_used_percent: optimizedContext.stats.budgetUsedPercent
+          },
+          {
+            format: 'A4',
+            printBackground: true,
+            margin: {
+              top: '20mm',
+              right: '15mm',
+              bottom: '20mm',
+              left: '15mm'
+            }
+          }
+        );
+        
+        // Set PDF response headers
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="clawsec-report-${scanId}.pdf"`);
+        res.setHeader('Content-Length', pdfBuffer.length);
+        
+        // Log PDF generation
+        console.log(JSON.stringify({
+          timestamp: new Date().toISOString(),
+          level: 'info',
+          type: 'pdf_generated',
+          scan_id: scanId,
+          pdf_size_bytes: pdfBuffer.length,
+          request_id: req.requestId
+        }));
+        
+        return res.send(pdfBuffer);
+        
+      } catch (pdfError) {
+        console.error('PDF generation failed:', pdfError);
+        
+        // Capture PDF generation error in Sentry
+        if (Sentry) {
+          Sentry.captureException(pdfError, {
+            tags: {
+              endpoint: '/api/v1/scan',
+              format: 'pdf',
+              error_type: 'pdf_generation_failed'
+            },
+            extra: {
+              scan_id: scanId,
+              request_id: req.requestId
+            }
+          });
+        }
+        
+        // Fallback to JSON format on PDF generation failure
+        return res.status(500).json({
+          error: 'PDF generation failed',
+          message: pdfError.message,
+          fallback: 'Try ?format=json or ?format=markdown instead'
+        });
+      }
     }
     
     // Default: Return standard response with markdown report
@@ -864,9 +1082,9 @@ function calculateRiskLevel(findings) {
 }
 
 /**
- * Generate security report with prioritized recommendations
+ * Generate security report with prioritized recommendations and OWASP compliance
  */
-function generateReport(scanId, config, findings, threatsIndex, scoreResult, prioritized = null) {
+function generateReport(scanId, config, findings, threatsIndex, scoreResult, prioritized = null, owaspCompliance = null) {
   const timestamp = new Date().toISOString();
   const riskLevel = scoreResult.level;
   const riskScore = scoreResult.score;
@@ -958,6 +1176,12 @@ function generateReport(scanId, config, findings, threatsIndex, scoreResult, pri
       
       report += `---\n\n`;
     });
+  }
+  
+  // OWASP LLM Top 10 Compliance (if available)
+  if (owaspCompliance) {
+    report += generateOWASPChecklistMarkdown(owaspCompliance);
+    report += `---\n\n`;
   }
   
   // Next Steps
@@ -1063,11 +1287,11 @@ app.use((err, req, res, next) => {
 
 // Start server
 if (require.main === module) {
-  app.listen(PORT, () => {
+  app.listen(PORT, '0.0.0.0', () => {
     console.log(`\n🔒 ClawSec Server v0.1.0-hackathon`);
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
-    console.log(`📊 Health check: http://localhost:${PORT}/health`);
-    console.log(`🔍 API info: http://localhost:${PORT}/api/v1`);
+    console.log(`🚀 Server running on http://0.0.0.0:${PORT}`);
+    console.log(`📊 Health check: http://0.0.0.0:${PORT}/health`);
+    console.log(`🔍 API info: http://0.0.0.0:${PORT}/api/v1`);
     console.log(`\n📋 Features:`);
     console.log(`   💡 Payment: ${process.env.ENABLE_PAYMENT === 'true' ? 'ENABLED' : 'DISABLED (demo mode)'}`);
     console.log(`   🌐 Network: ${process.env.NETWORK || 'base-sepolia'}`);

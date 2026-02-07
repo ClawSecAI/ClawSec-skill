@@ -42,7 +42,8 @@
     "@x402/express": "^2.3.0",
     "@x402/evm": "^2.3.0",
     "@x402/core": "^2.3.0",
-    "express-rate-limit": "^7.1.5"
+    "express-rate-limit": "^7.1.5",
+    "puppeteer": "^22.0.0"
   },
   "optionalDependencies": {
     "@sentry/node": "^7.100.0",
