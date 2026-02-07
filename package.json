@@ -34,6 +34,7 @@
   },
   "homepage": "https://github.com/ClawSecAI/ClawSec-skill#readme",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.32.0",
     "@x402/core": "^2.3.0",
     "@x402/evm": "^2.3.0",
     "@x402/express": "^2.3.0",

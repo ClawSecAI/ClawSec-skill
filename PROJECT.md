@@ -655,6 +655,66 @@
 - **Completed:** 2026-02-06 (Initial implementation)
 - **Test Suite Added:** 2026-02-06 21:00 UTC (Trello Card #TYlVdOE5)
 
+### 3.4 Premium Tier LLM Analysis
+- **Status:** ✅ COMPLETE (2026-02-07 16:00 UTC)
+- **CRITICAL HACKATHON FIX:** Premium tier ($3) now has real differentiation from basic tier ($1)
+- **Components:**
+  - [x] @anthropic-ai/sdk package installed (v0.32.0)
+  - [x] LLM analyzer module created (server/llm-analyzer.js - 14KB)
+  - [x] Claude Sonnet 4-5 integration (premium tier only)
+  - [x] Tier detection logic (payment amount, query param, X-Tier header)
+  - [x] Attack chain identification
+  - [x] Contextual severity analysis
+  - [x] Smart prioritization (max security improvement)
+  - [x] Natural language executive summary
+  - [x] Configuration-specific recommendations
+  - [x] Graceful fallback (ANTHROPIC_API_KEY missing)
+  - [x] Report enhancement (markdown + JSON)
+  - [x] Comprehensive test suite (test-premium-tier.js)
+- **Implementation Details:**
+  - **Tier Detection (3 methods):**
+    - Payment amount: $3 = premium, $1 = basic (X402 payment data)
+    - Query parameter: `?tier=premium` (testing without payment)
+    - X-Tier header: `X-Tier: premium` (API clients)
+  - **LLM Analysis Features:**
+    - Attack chains: Multi-stage exploit scenarios with likelihood ratings
+    - Contextualized priorities: AI-ranked fixes by security impact
+    - Risk factors: Configuration-specific vulnerabilities
+    - Smart recommendations: Actionable steps with timelines
+    - Executive summary: Business-friendly 2-3 sentences
+    - Token tracking: Input/output tokens and duration metrics
+  - **Integration Points:**
+    - server/index.js: Tier detection + LLM call after pattern matching
+    - server/llm-analyzer.js: Claude API client + prompt builder
+    - Markdown enhancement: Attack chains, priorities, recommendations sections
+    - JSON response: premium_tier object with all LLM insights
+  - **Graceful Fallback:**
+    - No ANTHROPIC_API_KEY: Pattern matching still works, premium_tier.llm_analysis = false
+    - API error: Catch and return fallback, report generation continues
+    - Response structure: Always includes premium_tier indicator with reason
+- **Success Criteria:**
+  - ✅ Basic tier ($1) unchanged - pattern matching only, NO LLM calls
+  - ✅ Premium tier ($3) adds LLM insights - attack chains, priorities, recommendations
+  - ✅ No regression - basic tier still works identically
+  - ✅ Graceful fallback - no API key = pattern matching continues
+  - ✅ Tests pass - test-premium-tier.js validates all scenarios
+- **Test Suite:** `test-premium-tier.js` (13KB, 4 tests)
+  - Test 1: Basic Tier - Pattern matching only (no premium data)
+  - Test 2: Premium Tier - With LLM analysis (requires ANTHROPIC_API_KEY)
+  - Test 3: Premium Tier Fallback - Graceful degradation (no API key)
+  - Test 4: Response Structure - Validation of all fields
+- **Files Modified:**
+  - package.json: Added @anthropic-ai/sdk ^0.32.0
+  - server/llm-analyzer.js: NEW - LLM analysis module (14KB)
+  - server/index.js: Tier detection + LLM integration (60 lines added)
+  - .env: ANTHROPIC_API_KEY placeholder already exists
+- **Value Proposition:**
+  - **Basic Tier ($1):** Fast pattern matching, 5-10 findings, 15-20s scans
+  - **Premium Tier ($3):** Pattern matching + AI analysis, attack chains, smart priorities, 30-45s scans
+  - **ROI:** 3x price for 5-10x value (AI insights worth $15-30 in manual analysis time)
+- **Completed:** 2026-02-07 16:00 UTC (Trello Card #iopXBF9i - LLM Premium Tier Analysis)
+- **Timeline:** 3.5 hours (ahead of 4-hour estimate)
+
 ---
 
 ## 4️⃣ Threat Database

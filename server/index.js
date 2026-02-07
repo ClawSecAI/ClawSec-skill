@@ -44,6 +44,13 @@ const {
 // Report Caching System
 const { getReportCache } = require('./report-cache');
 
+// LLM-Enhanced Analysis (Premium Tier)
+const { 
+  analyzePremiumTier, 
+  enhanceReportWithLLM, 
+  enhanceMarkdownWithLLM 
+} = require('./llm-analyzer');
+
 // Sentry Error Tracking (Optional - requires SENTRY_DSN env var)
 let Sentry;
 if (process.env.SENTRY_DSN) {
@@ -613,8 +620,83 @@ app.post('/api/v1/scan',
     // Generate OWASP LLM Top 10 compliance summary
     const owaspCompliance = generateOWASPCompliance(findings);
     
+    // ============================================================================
+    // PREMIUM TIER: LLM-Enhanced Analysis (Claude Sonnet)
+    // ============================================================================
+    // Detect if premium tier based on:
+    // 1. Payment amount ($3) OR
+    // 2. Query parameter tier=premium (for testing without payment)
+    // 3. X-Tier header (for API clients)
+    
+    let isPremiumTier = false;
+    let llmAnalysis = null;
+    
+    // Check query parameter (for testing)
+    if (req.query.tier === 'premium') {
+      isPremiumTier = true;
+      console.log('✨ Premium tier detected (query parameter)');
+    }
+    
+    // Check X-Tier header
+    if (req.headers['x-tier'] === 'premium') {
+      isPremiumTier = true;
+      console.log('✨ Premium tier detected (X-Tier header)');
+    }
+    
+    // Check payment amount ($3 = premium, $1 = basic)
+    if (paymentVerified && paymentData) {
+      // X402 payment data includes amount (e.g., "$3" or "$1")
+      const paymentAmount = paymentData.amount || '';
+      if (paymentAmount.includes('3')) {
+        isPremiumTier = true;
+        console.log('✨ Premium tier detected (payment: $3)');
+      } else if (paymentAmount.includes('1')) {
+        isPremiumTier = false;
+        console.log('💎 Basic tier detected (payment: $1)');
+      }
+    }
+    
+    // Call LLM analysis for premium tier ONLY
+    if (isPremiumTier) {
+      console.log('🧠 Initiating premium tier LLM analysis...');
+      try {
+        llmAnalysis = await analyzePremiumTier(
+          findings,
+          optimizedContext,
+          scoreResult,
+          scanInput
+        );
+        
+        if (llmAnalysis.available) {
+          console.log(`✅ LLM analysis complete:`, {
+            attack_chains: llmAnalysis.attack_chains?.length || 0,
+            priorities: llmAnalysis.contextualized_priorities?.length || 0,
+            recommendations: llmAnalysis.recommendations?.length || 0,
+            tokens: llmAnalysis.metadata?.tokens_used || 0
+          });
+        } else {
+          console.warn('⚠️  LLM analysis unavailable:', llmAnalysis.reason || llmAnalysis.error);
+        }
+      } catch (error) {
+        console.error('❌ LLM analysis failed:', error.message);
+        // Graceful fallback - continue with basic report
+        llmAnalysis = {
+          available: false,
+          error: error.message,
+          fallback: true
+        };
+      }
+    } else {
+      console.log('💎 Basic tier - using pattern matching only (no LLM analysis)');
+    }
+    
     // Generate report with prioritized recommendations and OWASP compliance
-    const report = generateReport(scanId, scanInput, findings, threatsIndex, scoreResult, prioritized, owaspCompliance);
+    let report = generateReport(scanId, scanInput, findings, threatsIndex, scoreResult, prioritized, owaspCompliance);
+    
+    // Enhance report with LLM insights if premium tier
+    if (isPremiumTier && llmAnalysis) {
+      report = enhanceMarkdownWithLLM(report, llmAnalysis);
+    }
     
     // Build response object
     const response = {
@@ -660,7 +742,24 @@ app.post('/api/v1/scan',
         categories_loaded: optimizedContext.stats.categoriesLoaded,
         categories_skipped: optimizedContext.stats.categoriesSkipped,
         budget_used_percent: optimizedContext.stats.budgetUsedPercent
-      }
+      },
+      // Premium tier LLM analysis (only included if premium tier)
+      ...(isPremiumTier && llmAnalysis && llmAnalysis.available ? {
+        premium_tier: {
+          llm_analysis: true,
+          executive_summary: llmAnalysis.executive_summary,
+          attack_chains: llmAnalysis.attack_chains,
+          contextualized_priorities: llmAnalysis.contextualized_priorities,
+          recommendations: llmAnalysis.recommendations,
+          risk_factors: llmAnalysis.risk_factors,
+          metadata: llmAnalysis.metadata
+        }
+      } : isPremiumTier ? {
+        premium_tier: {
+          llm_analysis: false,
+          reason: llmAnalysis?.reason || llmAnalysis?.error || 'LLM analysis unavailable'
+        }
+      } : {})
     };
     
     // Validate response before sending
@@ -686,7 +785,9 @@ app.post('/api/v1/scan',
       risk_score: scoreResult.score,
       scan_duration_ms: scanDuration,
       context_tokens: optimizedContext.stats.contextTokens,
-      payment_verified: paymentVerified
+      payment_verified: paymentVerified,
+      premium_tier: isPremiumTier,
+      llm_analysis: isPremiumTier && llmAnalysis?.available
     };
     
     // Record payment if verified
@@ -713,7 +814,10 @@ app.post('/api/v1/scan',
       scan_duration_ms: scanDuration,
       context_tokens: optimizedContext.stats.contextTokens,
       model: optimizedContext.stats.modelName,
-      payment_verified: paymentVerified
+      payment_verified: paymentVerified,
+      premium_tier: isPremiumTier,
+      llm_analysis: isPremiumTier && llmAnalysis?.available,
+      llm_tokens: llmAnalysis?.metadata?.tokens_used || 0
     }));
     
     // Check output format (default: markdown, optional: json, pdf)
