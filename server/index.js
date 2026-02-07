@@ -788,14 +788,30 @@ app.post('/api/v1/scan',
     
     // Check payment amount ($3 = premium, $1 = basic)
     if (paymentVerified && paymentData) {
-      // X402 payment data includes amount (e.g., "$3" or "$1")
-      const paymentAmount = paymentData.amount || '';
-      if (paymentAmount.includes('3')) {
-        isPremiumTier = true;
-        console.log('✨ Premium tier detected (payment: $3)');
-      } else if (paymentAmount.includes('1')) {
-        isPremiumTier = false;
-        console.log('💎 Basic tier detected (payment: $1)');
+      // X402 payment data - check the amount field
+      console.log('🔍 Payment data:', JSON.stringify(paymentData, null, 2));
+      
+      // The amount is in the smallest unit (e.g., 3000000 for $3 USDC with 6 decimals)
+      // USDC has 6 decimals: $3 = 3000000, $1 = 1000000
+      const paymentAmount = paymentData.amount;
+      if (paymentAmount && typeof paymentAmount === 'string') {
+        // Convert to number for comparison
+        const amountNum = parseInt(paymentAmount);
+        if (amountNum >= 3000000) { // $3 or more
+          isPremiumTier = true;
+          console.log('✨ Premium tier detected (payment: $3 or more)');
+        } else if (amountNum >= 1000000) { // $1-$2.99
+          isPremiumTier = false;
+          console.log('💎 Basic tier detected (payment: $1)');
+        }
+      } else if (typeof paymentAmount === 'number') {
+        if (paymentAmount >= 3000000) {
+          isPremiumTier = true;
+          console.log('✨ Premium tier detected (payment: $3 or more)');
+        } else if (paymentAmount >= 1000000) {
+          isPremiumTier = false;
+          console.log('💎 Basic tier detected (payment: $1)');
+        }
       }
     }
     

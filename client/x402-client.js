@@ -82,18 +82,25 @@ async function makePaymentRequest(fetchWithPayment, url, options = {}) {
  * @param {string} config.network - Network ID
  * @param {string} config.rpcUrl - RPC URL
  * @param {Object} scanData - Scan data to submit
+ * @param {string} [tier] - Optional tier: 'basic' or 'premium' (default: basic)
  * @returns {Promise<Object>} Scan report
  */
-async function scanWithPayment(config, scanData) {
+async function scanWithPayment(config, scanData, tier = 'basic') {
   const { apiUrl, privateKey, network, rpcUrl } = config;
   
   // Create payment-enabled fetch
   const fetchWithPayment = createPaymentClient({ privateKey, network, rpcUrl });
   
+  // Build URL with tier parameter if premium
+  let url = `${apiUrl}/api/v1/scan`;
+  if (tier === 'premium') {
+    url += '?tier=premium';
+  }
+  
   // Make paid request
   const response = await makePaymentRequest(
     fetchWithPayment,
-    `${apiUrl}/api/v1/scan`,
+    url,
     {
       method: 'POST',
       headers: {
