@@ -48,7 +48,7 @@ User → Skill → Payment → API → Analysis → Report → User
 
 2. **USDC Wallet**
    - Wallet with USDC on Base network
-   - Minimum balance: $0.01 USDC (basic scan) or $0.03 USDC (thorough scan)
+   - Minimum balance: $1 USDC (basic scan) or $3 USDC (premium scan)
    - Supported wallets: MetaMask, Coinbase Wallet, WalletConnect
 
 3. **Network Access**
@@ -235,8 +235,8 @@ Agent shows user the pricing options:
 
 ```
 Agent: "ClawSec Security Audit Pricing:
-  • Basic Scan (Haiku): $0.01 USDC - Fast analysis
-  • Thorough Scan (Sonnet): $0.03 USDC - Comprehensive analysis
+  • Basic Scan (Haiku): $1 USDC - Fast analysis
+  • Premium Scan (Sonnet): $3 USDC - Comprehensive analysis
   
 Which scan would you like?"
 
@@ -350,7 +350,7 @@ PAYMENT-REQUIRED: eyJ4NDAyVmVyc2lvbiI6MiwiYWNjZXB0cy...
 {
   "error": "Payment Required",
   "protocol": "X402",
-  "price": "$0.01 USDC",
+  "price": "$1 USDC",
   "network": "base-mainnet"
 }
 ```
@@ -512,7 +512,7 @@ PAYMENT-SIGNATURE: eyJ2ZXJzaW9uIjoyLCJzY2hlbWUiOi...
 3. **Facilitator Checks:**
    - ✅ Signature is valid (EIP-712)
    - ✅ Transaction hasn't been used before
-   - ✅ Amount matches requirement ($0.01 USDC)
+   - ✅ Amount matches requirement ($1 USDC)
    - ✅ Recipient is correct (ClawSec wallet)
    - ✅ Asset is USDC contract
 
@@ -1340,11 +1340,11 @@ curl -X POST https://clawsec-skill-production.up.railway.app/api/v1/scan \
 ### D. Pricing & Billing
 
 **Scan Pricing:**
-- **Basic Scan:** $0.01 USDC (Claude Haiku)
+- **Basic Scan:** $1 USDC (Claude Haiku)
   - Fast analysis (~30 seconds)
   - Pattern matching + basic recommendations
   
-- **Thorough Scan:** $0.03 USDC (Claude Sonnet)
+- **Premium Scan:** $3 USDC (Claude Sonnet)
   - Comprehensive analysis (~60 seconds)
   - LLM-enhanced insights + detailed remediation
 
@@ -1376,7 +1376,7 @@ curl -X POST https://clawsec-skill-production.up.railway.app/api/v1/scan \
                               ↓
 ┌─────────────────────────────────────────────────────────────────┐
 │ PHASE 3: PAYMENT PREPARATION                                    │
-│ Agent displays pricing ($0.01 basic / $0.03 thorough)          │
+│ Agent displays pricing ($1 basic / $3 premium)          │
 │ User confirms wallet and payment readiness                      │
 └─────────────────────────────────────────────────────────────────┘
                               ↓

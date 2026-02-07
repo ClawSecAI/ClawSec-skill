@@ -18,8 +18,8 @@ const FACILITATOR_MAINNET = 'https://api.cdp.coinbase.com/platform/v2/x402';
 
 // Pricing tiers (in USD)
 const PRICING = {
-  BASIC: '$0.01',    // Haiku model - fast basic scan
-  THOROUGH: '$0.03'  // Sonnet model - comprehensive scan
+  BASIC: '$1',      // Fast basic scan - pattern matching
+  PREMIUM: '$3'     // Comprehensive scan - enhanced analysis
 };
 
 /**
@@ -67,7 +67,7 @@ function initializePaymentServer() {
   console.log(`   Network: ${network}`);
   console.log(`   Facilitator: ${facilitatorUrl}`);
   console.log(`   Receiving wallet: ${payTo.substring(0, 10)}...${payTo.substring(payTo.length - 8)}`);
-  console.log(`   Pricing: Basic ${PRICING.BASIC}, Thorough ${PRICING.THOROUGH}`);
+  console.log(`   Pricing: Basic ${PRICING.BASIC}, Premium ${PRICING.PREMIUM}`);
   
   return { server, payTo, network };
 }

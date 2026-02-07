@@ -217,7 +217,7 @@
     - [x] Payment enabled in .env (ENABLE_PAYMENT=true)
     - [x] Automated validation runner created (validate-testnet.js)
     - [x] Comprehensive test documentation (TESTNET-*.md files)
-    - [x] Documentation pricing verified ($0.01/$0.03 - already correct)
+    - [x] Documentation pricing verified ($1/$3 - already correct)
     - [x] Code review complete (no critical issues found)
   - [x] **Dependency version fix (2026-02-07 01:55 UTC):**
     - [x] Fixed package.json @x402 versions: ^0.7.3 → ^2.3.0 (non-existent version → latest)
@@ -352,8 +352,8 @@
       8. Post results to Trello card #43
   - [ ] Mainnet deployment (pending CDP credentials)
 - **Pricing:**
-  - Basic (Haiku): $0.01 USDC per scan
-  - Thorough (Sonnet): $0.03 USDC per scan
+  - Basic (Haiku): $1 USDC per scan
+  - Premium (Sonnet): $3 USDC per scan
 - **Networks:**
   - Testnet: Base Sepolia (eip155:84532)
   - Mainnet: Base (eip155:8453)
@@ -377,7 +377,7 @@
     - ✅ 402 Payment Required response (middleware active)
     - ✅ Payment transaction signed and verified
     - ✅ Scan report generated (7 findings, CRITICAL risk)
-    - ✅ Payment configuration validated ($0.01 USDC, correct wallet)
+    - ✅ Payment configuration validated ($1 USDC, correct wallet)
   - **Payment Flow Verified:**
     1. Client requests scan → Server returns 402 with PAYMENT-REQUIRED header
     2. Client signs USDC payment → Submits to X402 facilitator
@@ -517,8 +517,8 @@
   - Speed: 4.0s vs 9.9s average (better UX)
   - Accuracy: Both 9.3+/10 with zero false positives
 - **Components:**
-  - [x] Haiku tier (fast, $0.01 - **SELECTED FOR MVP**)
-  - [x] Sonnet tier (quality, $0.03 - available for premium tier)
+  - [x] Haiku tier (fast, $1 - **SELECTED FOR MVP**)
+  - [x] Sonnet tier (quality, $3 - available for premium tier)
   - [ ] Opus tier (deep analysis, $0.10+ - future consideration)
   - [x] Temperature/parameter tuning
   - [x] Comprehensive LLM comparison testing (3 test cases, 6 reports)
@@ -1363,7 +1363,7 @@
   - Value: Haiku delivers 24.5x better value per quality point
 - ✅ Final recommendation: **Claude 3.5 Haiku for MVP** (95% confidence)
   - Quality is "good enough" (85.8%, catches all critical issues)
-  - 27x cost savings enables sustainable $0.01/scan pricing
+  - 27x cost savings enables sustainable $1/scan pricing
   - 2.5x speed improvement (4s avg, excellent UX)
   - Zero false positives (same accuracy as Sonnet)
   - Trade-off accepted: -10% quality for 96% cost reduction
