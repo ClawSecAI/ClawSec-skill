@@ -387,6 +387,61 @@
   - **Documentation:** Complete test results posted to Trello
   - **Status:** Testnet ready for production use ✅
 
+
+### 2.2.5 LLM Premium Tier Enhancement
+- **Status:** 🟡 In Progress - Sub-agent working (2026-02-07 16:00 UTC)
+- **Priority:** P0 CRITICAL - Hackathon blocker
+- **Problem:** Premium tier ($3) has no differentiation from basic ($1)
+- **Solution:** Add Claude Sonnet analysis for premium tier only
+- **Trello Card:** https://trello.com/c/iopXBF9i
+- **Sub-Agent:** eb1979c2-5d1e-43f6-98b3-a558e076590a
+- **Tasks:**
+  - [ ] Phase 1: Core LLM Integration (2 hours)
+    - [ ] Install @anthropic-ai/sdk package
+    - [ ] Create server/llm-analyzer.js module
+    - [ ] Implement Claude API client (claude-sonnet-4-5)
+    - [ ] Design prompt structure using optimizedContext
+    - [ ] Parse LLM JSON response
+  - [ ] Phase 2: Tier Logic (30 minutes)
+    - [ ] Detect premium tier (payment $3 or query param)
+    - [ ] Basic tier: Skip LLM (no regression)
+    - [ ] Premium tier: Call LLM after pattern matching
+    - [ ] Graceful fallback if API key missing
+  - [ ] Phase 3: Report Integration (1 hour)
+    - [ ] Merge LLM insights into report JSON
+    - [ ] Add attack_chains section
+    - [ ] Add contextualized_priorities
+    - [ ] Enhance executive summary with LLM
+    - [ ] Update markdown generation
+  - [ ] Phase 4: Testing (30 minutes)
+    - [ ] Test basic tier (no changes)
+    - [ ] Test premium with API key
+    - [ ] Test fallback without key
+    - [ ] Verify pricing differentiation
+- **Premium Features ($3):**
+  - Attack Chain Analysis - How findings combine into exploits
+  - Contextual Severity - Why critical in THIS configuration
+  - Smart Prioritization - Order fixes by max security improvement
+  - Executive Summary - Natural language business explanation
+  - Specific Recommendations - Tailored to actual config
+- **Technical Approach:**
+  - Use existing optimizedContext for threat intel
+  - LLM analyzes relationships between findings
+  - Structured JSON output parsed into report
+  - Basic tier unchanged (pattern matching only)
+- **Example Enhancement:**
+  - Basic: "Weak token detected (CRITICAL)"
+  - Premium: "Weak token + public exposure creates immediate remote takeover risk. Fix both together (order: 1,2) as they form an attack chain. Estimated exploit time: <5 minutes."
+- **Timeline:** 4 hours total
+- **Estimated Completion:** 2026-02-07 20:00 UTC
+- **Deliverables:**
+  - server/llm-analyzer.js (new module)
+  - Updated server/index.js (tier logic)
+  - Updated package.json (@anthropic-ai/sdk)
+  - Test suite
+  - Documentation updates
+
+
 ### 2.3 Report Processing Pipeline
 - **Status:** ✅ Done (Report Caching Complete - 2026-02-07 09:17 UTC)
 - **Components:**
