@@ -78,14 +78,12 @@ function initializePaymentServer() {
 function getPaymentConfig(payTo, network) {
   return {
     'POST /api/v1/scan': {
-      accepts: [
-        {
-          scheme: 'exact',
-          price: PRICING.BASIC,
-          network: network,
-          payTo: payTo,
-        }
-      ],
+      accepts: {
+        scheme: 'exact',
+        price: PRICING.BASIC,
+        network: network,
+        payTo: payTo,
+      },
       description: 'AI-powered security audit for OpenClaw configurations',
       mimeType: 'application/json',
       extensions: {
