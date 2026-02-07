@@ -2,23 +2,23 @@
  * X402 Payment Client for ClawSec
  * 
  * Handles payment flow from client side:
- * 1. Request resource → get 402 with payment requirements
- * 2. Sign payment transaction
+ * 1. Request without payment → get 402 with payment requirements
+ * 2. Sign payment with test wallet
  * 3. Retry request with payment signature
  * 4. Receive resource
  */
 
-const { X402Client } = require('@x402/fetch');
-const { ExactEvmScheme } = require('@x402/evm/exact/client');
+const { wrapFetchWithPaymentFromConfig } = require('@x402/fetch');
+const { ExactEvmScheme } = require('@x402/evm');
 
 /**
- * Create X402 payment client
+ * Create X402 payment-enabled fetch function
  * 
  * @param {Object} config - Client configuration
- * @param {string} config.privateKey - Wallet private key (without 0x prefix)
+ * @param {string} config.privateKey - Wallet private key (with 0x prefix)
  * @param {string} config.network - Network ID (e.g., 'eip155:84532')
  * @param {string} config.rpcUrl - RPC endpoint for the network
- * @returns {X402Client} Configured X402 client
+ * @returns {Function} Fetch function with payment support
  */
 function createPaymentClient(config) {
   const { privateKey, network, rpcUrl } = config;
@@ -35,30 +35,37 @@ function createPaymentClient(config) {
     throw new Error('RPC URL required');
   }
   
-  // Create EVM scheme client
-  const evmScheme = new ExactEvmScheme({
-    privateKey: privateKey.startsWith('0x') ? privateKey.slice(2) : privateKey,
-    rpcUrl: rpcUrl
+  // Ensure private key has 0x prefix
+  const pk = privateKey.startsWith('0x') ? privateKey : `0x${privateKey}`;
+  
+  // Import viem dynamically (since it might not be installed)
+  const { privateKeyToAccount } = require('viem/accounts');
+  const account = privateKeyToAccount(pk);
+  
+  // Create payment-enabled fetch
+  const fetchWithPayment = wrapFetchWithPaymentFromConfig(fetch, {
+    schemes: [
+      {
+        network: network,
+        client: new ExactEvmScheme(account),
+      },
+    ],
   });
   
-  // Create X402 client and register scheme
-  const client = new X402Client()
-    .register(network, evmScheme);
-  
-  return client;
+  return fetchWithPayment;
 }
 
 /**
  * Make a paid API request
  * 
- * @param {X402Client} client - X402 client instance
+ * @param {Function} fetchWithPayment - Payment-enabled fetch function
  * @param {string} url - API endpoint URL
  * @param {Object} options - Fetch options (method, body, headers, etc.)
  * @returns {Promise<Response>} Fetch response
  */
-async function makePaymentRequest(client, url, options = {}) {
+async function makePaymentRequest(fetchWithPayment, url, options = {}) {
   try {
-    const response = await client.fetch(url, options);
+    const response = await fetchWithPayment(url, options);
     return response;
   } catch (error) {
     console.error('Payment request failed:', error.message);
@@ -80,12 +87,12 @@ async function makePaymentRequest(client, url, options = {}) {
 async function scanWithPayment(config, scanData) {
   const { apiUrl, privateKey, network, rpcUrl } = config;
   
-  // Create payment client
-  const client = createPaymentClient({ privateKey, network, rpcUrl });
+  // Create payment-enabled fetch
+  const fetchWithPayment = createPaymentClient({ privateKey, network, rpcUrl });
   
   // Make paid request
   const response = await makePaymentRequest(
-    client,
+    fetchWithPayment,
     `${apiUrl}/api/v1/scan`,
     {
       method: 'POST',
