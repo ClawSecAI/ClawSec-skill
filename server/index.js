@@ -330,6 +330,7 @@ app.get('/api/v1/report/:id',
     try {
       const scanId = req.params.id;
       const model = req.query.model || 'default'; // Support different model outputs
+      const includePdf = req.query.include_pdf === 'true'; // NEW: PDF delivery parameter
       
       // Try cache first
       const cachedReport = await reportCache.get(scanId, model);
@@ -340,14 +341,96 @@ app.get('/api/v1/report/:id',
           type: 'cache_hit',
           scan_id: scanId,
           model,
-          source: 'cache'
+          source: 'cache',
+          include_pdf: includePdf
         }));
         
-        return res.status(200).json({
+        // Build response from cached data
+        const response = {
           ...cachedReport,
           cached: true,
           cache_backend: reportCache.getBackend()
-        });
+        };
+        
+        // NEW: Optionally include PDF in response
+        if (includePdf) {
+          try {
+            // Extract data needed for PDF generation from cached report
+            const pdfData = {
+              scanId: scanId,
+              findings: cachedReport.findings || [],
+              riskScore: cachedReport.risk_score,
+              riskLevel: cachedReport.risk_level,
+              scoreResult: {
+                score: cachedReport.risk_score,
+                level: cachedReport.risk_level,
+                confidence: cachedReport.score_confidence || 'medium',
+                breakdown: {
+                  baseScore: cachedReport.risk_score,
+                  contextMultiplier: 1.0,
+                  appliedFactors: []
+                }
+              },
+              prioritized: cachedReport.prioritized_recommendations || null,
+              optimization: cachedReport.optimization || {}
+            };
+            
+            // Generate PDF from cached data
+            const pdfBuffer = await generatePDFFromScan(
+              pdfData.scanId,
+              {}, // scanInput not stored in cache, use empty object
+              pdfData.findings,
+              {}, // threatsIndex not needed for PDF generation
+              pdfData.scoreResult,
+              pdfData.prioritized,
+              pdfData.optimization
+            );
+            
+            response.pdf = {
+              data: pdfBuffer.toString('base64'),
+              size_bytes: pdfBuffer.length,
+              mime_type: 'application/pdf',
+              filename: `clawsec-report-${scanId}.pdf`,
+              encoding: 'base64'
+            };
+            
+            console.log(JSON.stringify({
+              timestamp: new Date().toISOString(),
+              level: 'info',
+              type: 'pdf_generated',
+              scan_id: scanId,
+              pdf_size_bytes: pdfBuffer.length,
+              source: 'cache'
+            }));
+            
+          } catch (pdfError) {
+            console.error('PDF generation failed:', pdfError);
+            
+            // Graceful error handling - include error in response but don't fail request
+            response.pdf = {
+              error: 'PDF generation failed',
+              message: pdfError.message,
+              fallback: 'Download PDF using ?format=pdf endpoint instead'
+            };
+            
+            // Capture in Sentry if available
+            if (Sentry) {
+              Sentry.captureException(pdfError, {
+                tags: {
+                  endpoint: '/api/v1/report/:id',
+                  feature: 'pdf_delivery',
+                  error_type: 'pdf_generation_failed'
+                },
+                extra: {
+                  scan_id: scanId,
+                  include_pdf: true
+                }
+              });
+            }
+          }
+        }
+        
+        return res.status(200).json(response);
       }
       
       // Cache miss - check job queue
@@ -378,6 +461,66 @@ app.get('/api/v1/report/:id',
       // Include result if completed
       if (job.status === JobStatus.COMPLETED && job.result) {
         response.result = job.result;
+        
+        // NEW: Optionally include PDF for completed jobs
+        if (includePdf && job.result.findings) {
+          try {
+            // Extract data from job result
+            const pdfData = {
+              scanId: scanId,
+              findings: job.result.findings || [],
+              riskScore: job.result.risk_score,
+              riskLevel: job.result.risk_level,
+              scoreResult: {
+                score: job.result.risk_score,
+                level: job.result.risk_level,
+                confidence: job.result.score_confidence || 'medium',
+                breakdown: {
+                  baseScore: job.result.risk_score,
+                  contextMultiplier: 1.0,
+                  appliedFactors: []
+                }
+              },
+              prioritized: job.result.prioritized_recommendations || null,
+              optimization: job.result.optimization || {}
+            };
+            
+            // Generate PDF
+            const pdfBuffer = await generatePDFFromScan(
+              pdfData.scanId,
+              {},
+              pdfData.findings,
+              {},
+              pdfData.scoreResult,
+              pdfData.prioritized,
+              pdfData.optimization
+            );
+            
+            response.pdf = {
+              data: pdfBuffer.toString('base64'),
+              size_bytes: pdfBuffer.length,
+              mime_type: 'application/pdf',
+              filename: `clawsec-report-${scanId}.pdf`,
+              encoding: 'base64'
+            };
+            
+            console.log(JSON.stringify({
+              timestamp: new Date().toISOString(),
+              level: 'info',
+              type: 'pdf_generated',
+              scan_id: scanId,
+              pdf_size_bytes: pdfBuffer.length,
+              source: 'job_queue'
+            }));
+            
+          } catch (pdfError) {
+            console.error('PDF generation failed:', pdfError);
+            response.pdf = {
+              error: 'PDF generation failed',
+              message: pdfError.message
+            };
+          }
+        }
         
         // Cache the completed result (asynchronously - don't wait)
         reportCache.set(scanId, model, response).catch(err => {

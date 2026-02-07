@@ -874,6 +874,79 @@ PAYMENT-RESPONSE: eyJzZXR0bGVkIjp0cnVlLCJ0cmFuc2FjdGlvbklkIjoi...
 }
 ```
 
+#### Optional: PDF Delivery via Query Parameter
+
+**NEW: Reports can optionally include base64-encoded PDF data:**
+
+To include a PDF in the JSON response, add the `?include_pdf=true` query parameter:
+
+```http
+GET /api/v1/report/clawsec-1707318123456-a1b2c3?include_pdf=true HTTP/1.1
+Host: clawsec-skill-production.up.railway.app
+```
+
+**Response includes PDF object:**
+
+```json
+{
+  "scan_id": "clawsec-1707318123456-a1b2c3",
+  "timestamp": "2026-02-07T14:30:00.000Z",
+  "risk_score": 85,
+  "risk_level": "CRITICAL",
+  "findings_count": 7,
+  "findings": [ ... ],
+  "pdf": {
+    "data": "JVBERi0xLjQKJeLjz9MKMyAwIG9iaiA8PC...",
+    "size_bytes": 245678,
+    "mime_type": "application/pdf",
+    "filename": "clawsec-report-clawsec-1707318123456-a1b2c3.pdf",
+    "encoding": "base64"
+  }
+}
+```
+
+**Client can decode and save the PDF:**
+
+```javascript
+// Decode base64 PDF
+const pdfBuffer = Buffer.from(report.pdf.data, 'base64');
+
+// Save to file
+const fs = require('fs');
+fs.writeFileSync('security-report.pdf', pdfBuffer);
+console.log(`PDF saved: ${report.pdf.filename} (${report.pdf.size_bytes} bytes)`);
+```
+
+**Error Handling:**
+
+If PDF generation fails, the response includes an error object instead:
+
+```json
+{
+  "pdf": {
+    "error": "PDF generation failed",
+    "message": "Puppeteer error: ...",
+    "fallback": "Download PDF using ?format=pdf endpoint instead"
+  }
+}
+```
+
+**Key Features:**
+
+- ✅ **Backward compatible**: Default behavior (no `include_pdf` param) unchanged
+- ✅ **Opt-in**: PDF only included when explicitly requested
+- ✅ **Graceful errors**: PDF generation failures don't break the API response
+- ✅ **Works with cache**: PDFs generated from both cached and fresh reports
+- ✅ **Professional format**: Full-featured PDF with styling, tables, and charts
+
+**Use Cases:**
+
+- Automated reporting systems that need PDF archival
+- Compliance requirements for document retention
+- Email distribution without requiring separate download
+- Integration with document management systems
+- Offline viewing without API access
+
 ### Step 7.3: Client Receives Report
 
 **The X402 client receives the successful response:**

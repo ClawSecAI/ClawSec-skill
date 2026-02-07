@@ -656,7 +656,7 @@
 - **Test Suite Added:** 2026-02-06 21:00 UTC (Trello Card #TYlVdOE5)
 
 ### 3.4 Premium Tier LLM Analysis
-- **Status:** ✅ COMPLETE (2026-02-07 16:00 UTC)
+- **Status:** 🟢 TESTING (Implementation Complete, Validation in Progress - 2026-02-07 16:28 UTC)
 - **CRITICAL HACKATHON FIX:** Premium tier ($3) now has real differentiation from basic tier ($1)
 - **Components:**
   - [x] @anthropic-ai/sdk package installed (v0.32.0)
@@ -671,6 +671,13 @@
   - [x] Graceful fallback (ANTHROPIC_API_KEY missing)
   - [x] Report enhancement (markdown + JSON)
   - [x] Comprehensive test suite (test-premium-tier.js)
+  - [x] **TESTING: Comprehensive tier comparison analysis (2026-02-07 16:28 UTC)**
+  - [x] **Test infrastructure: run-tests-simple.sh, test-payload.json**
+  - [x] **Documentation: TIER-TESTING-RESULTS.md (60KB comprehensive comparison)**
+  - [x] **Demo examples: DEMO-EXAMPLES.md (13KB with presentation scripts)**
+  - [ ] **PENDING: Live test execution (requires ANTHROPIC_API_KEY or run without for fallback test)**
+  - [ ] **PENDING: Test outputs validation (basic-tier-output.json, premium-tier-output.json, fallback-output.json)**
+  - [ ] **PENDING: Performance benchmarks (response time, token usage)**
 - **Implementation Details:**
   - **Tier Detection (3 methods):**
     - Payment amount: $3 = premium, $1 = basic (X402 payment data)
@@ -697,6 +704,13 @@
   - ✅ Premium tier ($3) adds LLM insights - attack chains, priorities, recommendations
   - ✅ No regression - basic tier still works identically
   - ✅ Graceful fallback - no API key = pattern matching continues
+- **Testing Validation Checklist:**
+  - [ ] **Test 1 - Basic Tier**: No premium_tier object, pattern matching only, 15-20s response
+  - [ ] **Test 2 - Premium Tier**: Has premium_tier object with LLM analysis, executive summary, attack chains, 30-45s response
+  - [ ] **Test 3 - Fallback**: Premium requested but API key missing, graceful degradation, clear error message
+  - [ ] **Comparison Analysis**: Side-by-side feature comparison documented
+  - [ ] **Performance Metrics**: Response times and token usage validated
+  - [ ] **Demo Readiness**: Presentation examples prepared
   - ✅ Tests pass - test-premium-tier.js validates all scenarios
 - **Test Suite:** `test-premium-tier.js` (13KB, 4 tests)
   - Test 1: Basic Tier - Pattern matching only (no premium data)
@@ -835,6 +849,33 @@
     - Automation script created (upload-pdf-to-trello.js)
   - **Status:** ✅ Testing Complete - All validation checks passed + PDF sample delivered
   - **Next:** Move to "To Review" after git push and Trello update
+- **PDF Delivery via Query Parameter (2026-02-07 16:40 UTC - Trello Card #r8dsgqMM):**
+  - [x] **Implementation Complete** - Option C (Query Parameter) selected
+  - [x] Modified `/api/v1/report/:id` endpoint to support `?include_pdf=true`
+  - [x] Base64 encoding of PDF data in JSON response
+  - [x] PDF object structure: data, size_bytes, mime_type, filename, encoding
+  - [x] Graceful error handling (PDF generation failures don't break API)
+  - [x] Works with both cached and fresh reports
+  - [x] Backward compatible (default behavior unchanged)
+  - [x] Test script created (`test-pdf-delivery.js` - 12KB)
+  - [x] Documentation updated:
+    - [x] README.md - Added PDF delivery section with code examples
+    - [x] docs/PROCESS.md - Added Phase 7.2 PDF delivery documentation
+  - [x] Test suite features:
+    - Test 1: Default endpoint (no PDF field)
+    - Test 2: With ?include_pdf=true (PDF object present)
+    - Test 3: Decode and verify PDF
+    - Test 4: Query parameter parsing
+  - **Features:**
+    - ✅ Opt-in via query parameter (no breaking changes)
+    - ✅ Base64-encoded PDF in `pdf` field
+    - ✅ Error object if generation fails
+    - ✅ Cache support (PDFs generated from cached data)
+    - ✅ Size and metadata included
+    - ✅ Professional formatting maintained
+  - **Timeline:** 1 hour (as estimated)
+  - **Status:** ✅ Ready for Testing
+  - **Next:** Commit, push, run tests, post results to Trello
 - **Export Implementation Plan:** See `docs/report-template.md` for complete documentation
 
 ### 5.3 OWASP LLM Top 10 & GDPR

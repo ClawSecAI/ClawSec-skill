@@ -215,10 +215,90 @@ cat test-results.json
 
 - Professional Markdown reports
 - JSON export for automation
+- **PDF delivery via API** (base64-encoded)
+- PDF export for professional documentation
 - Severity scoring (Critical/High/Medium/Low)
 - Specific remediation commands
 - Verification scripts
 - Compliance checklists
+
+#### PDF Delivery via API
+
+Retrieve reports with embedded PDF data using the `?include_pdf=true` query parameter:
+
+```javascript
+// Get report with embedded PDF
+const https = require('https');
+
+const options = {
+  hostname: 'clawsec-skill-production.up.railway.app',
+  port: 443,
+  path: '/api/v1/report/clawsec-1234567890-abc123?include_pdf=true',
+  method: 'GET'
+};
+
+const req = https.request(options, (res) => {
+  let data = '';
+  res.on('data', (chunk) => { data += chunk; });
+  res.on('end', () => {
+    const report = JSON.parse(data);
+    
+    // Check if PDF is included
+    if (report.pdf && report.pdf.data) {
+      // Decode base64 PDF
+      const pdfBuffer = Buffer.from(report.pdf.data, 'base64');
+      
+      // Save to file
+      require('fs').writeFileSync('security-report.pdf', pdfBuffer);
+      console.log(`PDF saved: ${report.pdf.filename} (${report.pdf.size_bytes} bytes)`);
+    }
+  });
+});
+
+req.end();
+```
+
+**PDF Object Structure**:
+
+```json
+{
+  "scan_id": "clawsec-1234567890-abc123",
+  "timestamp": "2026-02-07T16:00:00.000Z",
+  "risk_level": "HIGH",
+  "findings": [...],
+  "pdf": {
+    "data": "JVBERi0xLjQKJeLj...",
+    "size_bytes": 245678,
+    "mime_type": "application/pdf",
+    "filename": "clawsec-report-clawsec-1234567890-abc123.pdf",
+    "encoding": "base64"
+  }
+}
+```
+
+**Error Handling**: If PDF generation fails, the `pdf` object will contain an error:
+
+```json
+{
+  "pdf": {
+    "error": "PDF generation failed",
+    "message": "Puppeteer error: ...",
+    "fallback": "Download PDF using ?format=pdf endpoint instead"
+  }
+}
+```
+
+**Alternative: Direct PDF Download**
+
+For direct PDF download without JSON wrapping:
+
+```bash
+# Download PDF directly
+curl -o report.pdf "https://clawsec-skill-production.up.railway.app/api/v1/scan?format=pdf" \
+  -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"gateway":{"token":"..."}}'
+```
 
 ## 🧠 Threat Intelligence
 
